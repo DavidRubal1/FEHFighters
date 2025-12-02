@@ -1,0 +1,84 @@
+class hitbox{
+    public:
+        hitbox(int posX1, int posY1, int posX2, int posY2);
+        hitbox(int heightIn, int lengthIn, int posX, int posY, bool overload);
+        void updateHitbox(int posX1, int posY1);
+        void debugDrawHitbox(int color);
+        bool rectangleIntersects(hitbox element);
+        std::vector<int> getCoordinates();
+    private:
+        int x1, y1, x2, y2;
+        int height, length;        
+};
+
+/*************************************************************************
+ * IMPORTANT:
+ * - The "Position" of a hitbox lies at the top-left corner of the hitbox
+ * - x1 and y1 are coordinates for the top-left corner
+ * - x2 and y2 are coordinates for the bottom-right corner
+ * - height and length are vertical and horizontal descriptors for how long 
+ *      the hitbox spans from its Position in the positive x and y directions (right and down)
+ * - There are two constructors for this class, the first takes the coordinates for 
+ *      the top-left and bottom-right, the other takes the position, height, length, 
+ *      and a filler value that allows a second constructor
+ * 
+ * 
+ ***************************************************************************/
+
+// constructor 1, for platforms 
+hitbox::hitbox(int posX1, int posY1, int posX2, int posY2){
+    x1 = posX1;
+    y1 = posY1;
+    x2 = posX2;
+    y2 = posY2;
+    length = x2-x1;
+    height = y2-y1;
+}
+// constructor 2, for players
+hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY, bool overload){
+    x1 = posX;
+    y1 = posY;
+    x2 = posX + lengthIn;
+    y2 = posY + heightIn;
+    length = lengthIn;
+    height = heightIn;
+}
+
+std::vector<int> hitbox::getCoordinates(){
+    return {x1, y1, x2, y2};
+}
+
+void hitbox::updateHitbox(int posX, int posY){
+    x1 = posX;
+    y1 = posY;
+    x2 = posX + length;
+    y2 = posY + height;
+    
+}
+
+void hitbox::debugDrawHitbox(int color){
+    LCD.SetFontColor(color);
+    LCD.DrawRectangle(x1, y1, length, height);
+}
+
+// ununsed, but will be useful for testing if attacks hit players
+// tests intersection of this and element, assuming that both are rectangluar
+bool hitbox::rectangleIntersects(hitbox element){
+    std::vector<int> elementCoords = element.getCoordinates();
+
+
+    // x1 and y1 and the upper left corners, x2 and y2 are the lower right corners
+
+    // The following 3 lines of code adapted from StackExchange user davin
+    // Url: https://math.stackexchange.com/questions/99565/simplest-way-to-calculate-the-intersect-area-of-two-rectangles
+    int x_overlap = fmax(0, fmin(x2, elementCoords[2]) - fmax(x1, elementCoords[0]));
+    int y_overlap = fmax(0, fmin(y2, elementCoords[3]) - fmax(y1, elementCoords[1]));
+    printf("X1: %d\nY1: %d\nX2: %d\nY2: %d\n", x1, y1, x2, y2);
+    printf("PX1: %d\nPY1: %d\nPX2: %d\nPY2: %d\n", elementCoords[0], elementCoords[1], elementCoords[2], elementCoords[3]);
+    
+    printf("X_Overlap: %d\nY_Overlap: %d\n", x_overlap, y_overlap);
+    int overlapArea = x_overlap * y_overlap;
+
+    return overlapArea > 0;
+}
+
