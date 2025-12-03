@@ -177,98 +177,7 @@ void player::getHit(float force, float damageAmount, int angleRadians, int attac
     damage += damageAmount;
 }
 
-void player::playAnimations(int frameTime){
-    if(!grounded){
-        inDashAnimation = false;
-    }
-    
-    //attack animation 
-    /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
-    if(inAttackAnimation){
-        char filePath[64];
-        
-        // Determine the correct attack sprite directory based on player color, direction, and attack type
-        if(playerColor == RED)
-        {
-            if(direction == -1)
-            {
-                // Punch left or other left attacks
-                if(currentAttackType == 0){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
-                }
-                // Add more attack types here:
-                else if(currentAttackType == 1){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
-                }
-            }
-            else
-            {
-                //right attacks
-                if(currentAttackType == 0)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
-                }
-                // Add more attack types here:
-                else if(currentAttackType == 1)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
-                }
-            }
-        }
-        
-    
-        
-        // Calculate total animation duration by summing all frame timings
-        int totalDuration = 0;
-        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
-        {
-            totalDuration += FrameTiming[currentAttackType][i];
-        }
-        
-        // Determine current frame based on timer
-        int elapsedTime = 0;
-        attackFrame = 0;
-        attackHitboxActive = false;
-        
-        //
-        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
-        {
-            //determines what frame the attack animation is on
-            if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
-            {
-                attackFrame = i;
-                attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
-                break;
-            }
-            elapsedTime += FrameTiming[currentAttackType][i];
-        }
-        //gets proper animation frame
-        strcat(filePath, std::to_string(attackFrame).c_str()); 
-        strcat(filePath, ".png");
-        FEHImage punchImg;
-        punchImg.Open(filePath);
-        if(direction == -1)
-        {
-        punchImg.Draw(positionX-11, positionY);
-        }
-        else
-        {
-        punchImg.Draw(positionX, positionY);
-    }
-        
-        // Update attack animation timer
-        attackAnimationTimer += frameTime;
-        if(attackAnimationTimer >= totalDuration){
-            inAttackAnimation = false;
-            currentAttackType = -1;
-            attackAnimationTimer = 0;
-            attackHitboxActive = false;
-            lagFrame = 20;  // lag after attack ends
-        }
-    }
-    // idle animation
-    else if(!inAnimation()){
-        inIdle = true;
+
     void player::dashAnimation(int frameTime){
         char filePath[64];
         if(playerColor == RED){
@@ -369,6 +278,96 @@ void player::playAnimations(int frameTime){
 
     if(doubleJumpUsed && !doubleJumpAnimationEnd){
         doubleJumpAnimation(frameTime);
+    }
+        if(!grounded){
+        inDashAnimation = false;
+    }
+    
+    //attack animation 
+    /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
+    if(inAttackAnimation){
+        char filePath[64];
+        
+        // Determine the correct attack sprite directory based on player color, direction, and attack type
+        if(playerColor == RED)
+        {
+            if(direction == -1)
+            {
+                // Punch left or other left attacks
+                if(currentAttackType == 0){
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
+                }
+                // Add more attack types here:
+                else if(currentAttackType == 1){
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
+                }
+            }
+            else
+            {
+                //right attacks
+                if(currentAttackType == 0)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
+                }
+                // Add more attack types here:
+                else if(currentAttackType == 1)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
+                }
+            }
+        }
+        
+        // Calculate total animation duration by summing all frame timings
+        int totalDuration = 0;
+        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
+        {
+            totalDuration += FrameTiming[currentAttackType][i];
+        }
+        
+        // Determine current frame based on timer
+        int elapsedTime = 0;
+        attackFrame = 0;
+        attackHitboxActive = false;
+        
+        //
+        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
+        {
+            //determines what frame the attack animation is on
+            if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
+            {
+                attackFrame = i;
+                attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
+                break;
+            }
+            elapsedTime += FrameTiming[currentAttackType][i];
+        }
+        //gets proper animation frame
+        strcat(filePath, std::to_string(attackFrame).c_str()); 
+        strcat(filePath, ".png");
+        FEHImage punchImg;
+        punchImg.Open(filePath);
+        if(direction == -1)
+        {
+        punchImg.Draw(positionX-11, positionY);
+        }
+        else
+        {
+        punchImg.Draw(positionX, positionY);
+    }
+        
+        // Update attack animation timer
+        attackAnimationTimer += frameTime;
+        if(attackAnimationTimer >= totalDuration){
+            inAttackAnimation = false;
+            currentAttackType = -1;
+            attackAnimationTimer = 0;
+            attackHitboxActive = false;
+            lagFrame = 20;  // lag after attack ends
+        }
+    }
+    // idle animation
+    else if(!inAnimation()){
+        inIdle = true;
     }
     
     // countdown timers
