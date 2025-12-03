@@ -5,7 +5,14 @@ class player{
         void dash(int direction);
         void enactPlayerMovement(int frameTime);
         void getHit(float force,  float damageAmount, int angleDegrees, int attackDirection);
+        
         void playAnimations(int frameTime);
+        void dashAnimation(int frameTime);
+        void crouchAnimation(int frameTime);
+        void idleAnimation(int frameTime);
+        
+        void doubleJumpAnimation(int frameTime);
+
         bool inAnimation();
         void resetIfOffscreen();
         void action(int frameTime);
@@ -13,6 +20,7 @@ class player{
         std::vector<float> getXYVelocity();
         void setXYVelocity(float x, float y);
         hitbox getHitbox();
+        float getDamage();
         // implement animation players to work
         //animation animationPlayer;
 
@@ -37,9 +45,9 @@ class player{
         float velocityXLimit = 20, velocityYLimit = 20;
 
         // grounded speed stuff
-        float accelerationX = 1.25;
-        float dashSpeedMod = 1.75;
-        float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
+        float accelerationX = 1.10;
+        float dashSpeedMod = 1.80;
+        float velocityXDecay = 0.90, velocityXDecayTemp = 0.90;
         float velocityXDecayDash = 0.95;
         // grounded state
         bool grounded = true;
@@ -50,21 +58,29 @@ class player{
 
         // dash variables
         bool inDashLag = false;
-        float dashLagTimerMax = 55;
+        float dashLagTimerMax = 3; // 3 frames
         float dashLagTimer = 0;
         
         // animation timers 
+        // THIS: I could also just not use the frame time and increment each frame...
         bool inDashAnimation = false;
-        int dashAnimationTimerMax = 128; // 9 frames * 16 milliseconds
+        int dashAnimationTimerMax = 8; // 9 frames, change every frame
         int dashAnimationTimer = 0;
         bool inIdle = false;
-        int idleTimerMax = 1024; // 2 frames * 512 milliseconds
+        int idleTimerMax = 59; // 2 frames, change every 30 frames
         int idleTimer = 0;
+
+        int doubleJumpTimerMax = 7; // 4 frames, change every other frame
+        int doubleJumpTimer = 0;
+        bool doubleJumpAnimationEnd = false;
+        int doubleJumpX, doubleJumpY;
+
+        bool inCrouch = false;
 
         //jump variables
         float jumpForce = 6;
         bool inJumpLag = false;
-        float jumpLagTimerMax = 55;
+        float jumpLagTimerMax = 3; // 3 frames
         float jumpLagTimer = 0;
 
         // unused, possibly use for animation related stuff
@@ -100,6 +116,9 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
 hitbox player::getHitbox(){
     return playerHitbox;
 }
+float player::getDamage(){
+    return damage;
+}
 std::vector<int> player::getXYPosition(){
     return {positionX, positionY};
 }
@@ -120,8 +139,8 @@ void player::getHit(float force, float damageAmount, int angleRadians, int attac
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
-    forceX = force*cos(angleRadians);
-    forceY = force*sin(angleRadians);
+    forceX = direction * force*cos(angleRadians);
+    forceY = direction * force*sin(angleRadians);
     // apply force to player velocity
     velocityX += forceX;
     velocityY -= forceY;
@@ -129,36 +148,7 @@ void player::getHit(float force, float damageAmount, int angleRadians, int attac
     damage += damageAmount;
 }
 
-void player::playAnimations(int frameTime){
-    if(!grounded){
-        inDashAnimation = false;
-    }
-    // idle animation
-    if(!inAnimation()){
-        inIdle = true;
-        char filePath[64];
-        //play idle animation
-        FEHImage idle;
-        if(playerColor == RED){
-            if(direction == -1){
-                strcpy(filePath, "./PlayerRed/Left/PlayerRedLeft");
-            }else{
-                strcpy(filePath, "./PlayerRed/Right/PlayerRedRight");
-            }
-        }else{
-            if(direction == -1){
-                strcpy(filePath, "./PlayerBlue/Left/PlayerBlueLeft");
-            }else{
-                strcpy(filePath, "./PlayerBlue/Right/PlayerBlueRight");
-            }
-        }
-        strcat(filePath, std::to_string(idleTimer/513).c_str());
-        strcat(filePath, ".png");
-        idle.Open(filePath);
-        idle.Draw(positionX, positionY);
-    }
-    // dash animation
-    if(grounded && (Keyboard.areAnyPressed({left, right}) || inDashAnimation)){  //dash right
+    void player::dashAnimation(int frameTime){
         char filePath[64];
         if(playerColor == RED){
             if(direction == -1){
@@ -175,16 +165,96 @@ void player::playAnimations(int frameTime){
         }
         inDashAnimation = true;
         FEHImage drawDash;
-        strcat(filePath, std::to_string(dashAnimationTimer/frameTime).c_str());
+        strcat(filePath, std::to_string(dashAnimationTimer).c_str());
+        strcat(filePath, ".png");
+        drawDash.Open(filePath);
+        drawDash.Draw(positionX, positionY);
+        
+    }
+    void player::crouchAnimation(int frameTime){
+        char filePath[64];
+        inDashAnimation = false;
+        if(playerColor == RED){
+            if(direction == -1){
+                strcpy(filePath, "./PlayerRed/CrouchLeft/RedCrouchLeft");
+            }else{
+                strcpy(filePath, "./PlayerRed/CrouchRight/RedCrouchRight");
+            }
+        }else{
+            if(direction == -1){
+                strcpy(filePath, "./PlayerBlue/CrouchLeft/BlueCrouchLeft");
+            }else{
+                strcpy(filePath, "./PlayerBlue/CrouchRight/BlueCrouchRight");
+            }
+        }
+        inCrouch = true;
+        FEHImage drawDash;
         strcat(filePath, ".png");
         drawDash.Open(filePath);
         drawDash.Draw(positionX, positionY);
     }
+    
+    void player::idleAnimation(int frameTime){
+            inIdle = true;
+            char filePath[64];
+            //play idle animation
+            FEHImage idle;
+            if(playerColor == RED){
+                if(direction == -1){
+                    strcpy(filePath, "./PlayerRed/Left/PlayerRedLeft");
+                }else{
+                    strcpy(filePath, "./PlayerRed/Right/PlayerRedRight");
+                }
+            }else{
+                if(direction == -1){
+                    strcpy(filePath, "./PlayerBlue/Left/PlayerBlueLeft");
+                }else{
+                    strcpy(filePath, "./PlayerBlue/Right/PlayerBlueRight");
+                }
+            }
+            strcat(filePath, std::to_string(idleTimer/30).c_str());
+            strcat(filePath, ".png");
+            idle.Open(filePath);
+            idle.Draw(positionX, positionY);
+    }
 
+void player::doubleJumpAnimation(int frameTime){
+    char filePath[64];
+    //play doublejump animation
+    FEHImage doubleJump;
+    strcpy(filePath, "./Double Jump Frames/doubleJumpFrame");
+    strcat(filePath, std::to_string(doubleJumpTimer/2).c_str());
+    strcat(filePath, ".png");
+    doubleJump.Open(filePath);
+    doubleJump.Draw(doubleJumpX - 3, doubleJumpY+hitboxHeight);
+}
+
+void player::playAnimations(int frameTime){
+    
+    if(!grounded){
+        inDashAnimation = false;
+    }
+    if(!grounded || !Keyboard.isPressed(down) || Keyboard.areAnyPressed({left, right})){ // uncrouch when not holding down
+            inCrouch = false;
+    }
+
+    if(grounded && (Keyboard.areAnyPressed({left, right}) || inDashAnimation)){  //dash right
+        dashAnimation(frameTime);
+    }else if(grounded && Keyboard.isPressed(down) && !Keyboard.areAnyPressed({left, right})){
+        crouchAnimation(frameTime);
+    }else{
+        idleAnimation(frameTime);
+    }
+
+    if(doubleJumpUsed && !doubleJumpAnimationEnd){
+        doubleJumpAnimation(frameTime);
+    }
+    
+    // countdown timers
     if(inDashAnimation){
         if(grounded){
             if(dashAnimationTimer < dashAnimationTimerMax){
-                dashAnimationTimer += frameTime;
+                dashAnimationTimer++;
             }else{
                 inDashAnimation = false;
                 dashAnimationTimer = 0;
@@ -193,12 +263,12 @@ void player::playAnimations(int frameTime){
             inDashAnimation = false;
             dashAnimationTimer = 0;
         }
-        
     }
+
     if(inIdle){
         if(grounded || !inAnimation()){
             if(idleTimer < idleTimerMax){
-                idleTimer += frameTime;
+                idleTimer++;
             }else{
                 idleTimer = 0;
             }
@@ -208,13 +278,25 @@ void player::playAnimations(int frameTime){
         }
         
     }
+
+    if(doubleJumpUsed){
+        if(!grounded && doubleJumpTimer < doubleJumpTimerMax){
+            doubleJumpTimer++;
+        }else{
+            doubleJumpTimer = 0;
+            doubleJumpAnimationEnd = true;
+        }
+    }else{
+        doubleJumpTimer = 0;
+        doubleJumpAnimationEnd = true;
+    }
+
     
 }
 
 bool player::inAnimation(){
-    return inDashAnimation;
+    return inDashAnimation || inCrouch;
 }
-
 
 void player::resetIfOffscreen(){
     // if playe position is off-screen
@@ -273,7 +355,6 @@ void player::generalPlayerMovementControl(int frameTime){
         // airborne movement (grouded == false)
         if(!Keyboard.isPressed({left, right})){
             if(Keyboard.isPressed(left)){
-                // normal acceleration
                 velocityX -= accelerationX * airspeedMod;
             }
             if(Keyboard.isPressed(right)){
@@ -294,6 +375,9 @@ void player::generalPlayerMovementControl(int frameTime){
             doubleJumpUsed = true;
             currentGravityForce = 0;
             velocityY =- jumpForce;
+            doubleJumpAnimationEnd = false;
+            doubleJumpX = positionX;
+            doubleJumpY = positionY;
             // TODO: animate double jump
             //FEHImage doubleJump;
             //doubleJump.Open("doubleJumpFrames\)
@@ -313,7 +397,7 @@ void player::generalPlayerMovementControl(int frameTime){
 
     // dash lag timer
     if(inDashLag){
-        dashLagTimer += frameTime;
+        dashLagTimer++;
         if(dashLagTimer >= dashLagTimerMax){
             inDashLag = false;
             dashLagTimer = 0;
@@ -322,7 +406,7 @@ void player::generalPlayerMovementControl(int frameTime){
     }
     // jump lag timer, prevents double jump from instantly being used
     if(inJumpLag){
-        jumpLagTimer += frameTime;
+        jumpLagTimer++;
         if(jumpLagTimer >= jumpLagTimerMax  && !Keyboard.isPressed(up)){
             inJumpLag = false;
             jumpLagTimer = 0;
@@ -334,10 +418,6 @@ void player::generalPlayerMovementControl(int frameTime){
 
 
 void player::enactPlayerMovement(int frameTime){
-    // remove previous frame
-    LCD.SetFontColor(BLACK);
-    LCD.FillRectangle(positionX, positionY, hitboxLength, hitboxHeight);
-
     // apply velocity
     positionX += velocityX;
     positionY += velocityY;
