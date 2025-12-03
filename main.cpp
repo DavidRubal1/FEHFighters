@@ -10,6 +10,7 @@
 #include "platform.h"  // uses hitbox.h
 #include "platformGroup.h" // usess platform.h 
 #include "animation.h"
+#include "attack.h" // uses hitbox.h
 
 // debug
 #include <stdio.h>
@@ -23,8 +24,8 @@ int main()
 
     // TODO: put title screen stuff here
 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, 160, 160, RED);
-    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_M, 230, 160, BLUE);
+    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, 160, 160, RED);
+    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_M, KEY_N, 230, 160, BLUE);
     platformGroup stage1;
     stage1.addPlatform(50, 180, 268, 240, 0x2e2e2e);
     stage1.addPlatform(106, 140, 213, 145, WHITE);
@@ -42,12 +43,17 @@ int main()
         
         Player1.generalPlayerMovementControl(frameTimeMilliseconds);
         Player1.enactPlayerMovement(frameTimeMilliseconds);
+        Player1.action(frameTimeMilliseconds);
         Player1.playAnimations(frameTimeMilliseconds);
+        Player1.getHitbox().debugDrawHitbox(RED); // debug
         Player1.resetIfOffscreen();
         Player2.generalPlayerMovementControl(frameTimeMilliseconds);
         Player2.enactPlayerMovement(frameTimeMilliseconds);
+        Player2.action(frameTimeMilliseconds);
         Player2.playAnimations(frameTimeMilliseconds);
         Player2.resetIfOffscreen();
+
+        
 
         
         // update frame

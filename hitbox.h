@@ -34,7 +34,7 @@ hitbox::hitbox(int posX1, int posY1, int posX2, int posY2){
     length = x2-x1;
     height = y2-y1;
 }
-// constructor 2, for players
+// constructor 2, for players and attacks
 hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY, bool overload){
     x1 = posX;
     y1 = posY;
