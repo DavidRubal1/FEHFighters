@@ -1,6 +1,6 @@
 class player{
     public:
-        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, int startingX, int startingY,  int color);
+        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, int startingX, int startingY,  int color);
         void generalPlayerMovementControl(int frameTime);
         void dash(int direction);
         void enactPlayerMovement(int frameTime);
@@ -20,6 +20,7 @@ class player{
         std::vector<float> getXYVelocity();
         void setXYVelocity(float x, float y);
         hitbox getHitbox();
+        int lagFrame = 0;
         float getDamage();
         // implement animation players to work
         //animation animationPlayer;
@@ -94,12 +95,39 @@ class player{
         float maxGravityForce = 1.5;
 
         // controls
-        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T;
+        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R;
         float damage = 0;
+        
+        // attack animation variables
+        bool inAttackAnimation = false;  // is any attack currently animating
+        int currentAttackType = -1;  //(-1 = none, 0 = punch, 1 = kick, etc.)
+        int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
+        int attackFrame = 0;  // current frame (0-4) being displayed
+        bool AttackPressedLastFrame = false;  //track previous frame's button state
+        
+       
+        // Number of images/frames for each attack type
+        int attackFrameCount[2] = {5, 5};  // punch has 5 frames, kick has 5 frames
+        
+        // Frame timing arrays for each attack (in milliseconds per frame)
+        // punch: frames 0-4 timing
+        int FrameTiming[2][5] = 
+        {
+            {15, 15, 40, 40, 20},
+            {20, 20, 50, 50, 30}
+        };
+        
+        //Hitbox activation arrays for each attack (which frames deal damage)
+        bool FrameHasHitbox[2][5] = {
+            {false, false, false, true, false},  //punch active frames
+            {false, false, false, true, false}  //kick active frames
+        };  
+        
+        bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
 };
 
 // constructor
-player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, int startingX, int startingY, int color) 
+player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY, true){
     left = leftwards;
     right = rightwards;
@@ -110,6 +138,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     positionX = startingX;
     positionY = startingY;
     basic = basicAttack;
+    kick = kickAttack;
     playerColor = color;
 }
 
@@ -148,6 +177,98 @@ void player::getHit(float force, float damageAmount, int angleRadians, int attac
     damage += damageAmount;
 }
 
+void player::playAnimations(int frameTime){
+    if(!grounded){
+        inDashAnimation = false;
+    }
+    
+    //attack animation 
+    /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
+    if(inAttackAnimation){
+        char filePath[64];
+        
+        // Determine the correct attack sprite directory based on player color, direction, and attack type
+        if(playerColor == RED)
+        {
+            if(direction == -1)
+            {
+                // Punch left or other left attacks
+                if(currentAttackType == 0){
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
+                }
+                // Add more attack types here:
+                else if(currentAttackType == 1){
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
+                }
+            }
+            else
+            {
+                //right attacks
+                if(currentAttackType == 0)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
+                }
+                // Add more attack types here:
+                else if(currentAttackType == 1)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
+                }
+            }
+        }
+        
+    
+        
+        // Calculate total animation duration by summing all frame timings
+        int totalDuration = 0;
+        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
+        {
+            totalDuration += FrameTiming[currentAttackType][i];
+        }
+        
+        // Determine current frame based on timer
+        int elapsedTime = 0;
+        attackFrame = 0;
+        attackHitboxActive = false;
+        
+        //
+        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
+        {
+            //determines what frame the attack animation is on
+            if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
+            {
+                attackFrame = i;
+                attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
+                break;
+            }
+            elapsedTime += FrameTiming[currentAttackType][i];
+        }
+        //gets proper animation frame
+        strcat(filePath, std::to_string(attackFrame).c_str()); 
+        strcat(filePath, ".png");
+        FEHImage punchImg;
+        punchImg.Open(filePath);
+        if(direction == -1)
+        {
+        punchImg.Draw(positionX-11, positionY);
+        }
+        else
+        {
+        punchImg.Draw(positionX, positionY);
+    }
+        
+        // Update attack animation timer
+        attackAnimationTimer += frameTime;
+        if(attackAnimationTimer >= totalDuration){
+            inAttackAnimation = false;
+            currentAttackType = -1;
+            attackAnimationTimer = 0;
+            attackHitboxActive = false;
+            lagFrame = 20;  // lag after attack ends
+        }
+    }
+    // idle animation
+    else if(!inAnimation()){
+        inIdle = true;
     void player::dashAnimation(int frameTime){
         char filePath[64];
         if(playerColor == RED){
@@ -295,7 +416,7 @@ void player::playAnimations(int frameTime){
 }
 
 bool player::inAnimation(){
-    return inDashAnimation || inCrouch;
+    return inDashAnimation || inAttackAnimation || inCrouch;
 }
 
 void player::resetIfOffscreen(){
@@ -317,6 +438,41 @@ void player::dash(int direction){
     velocityX += direction * accelerationX * dashSpeedMod;
     inDashLag = true;
     velocityXDecay = velocityXDecayDash;
+}
+
+void player::action(int frameTime){
+    // Decrease lag frame counter
+    if(lagFrame > 0){
+        lagFrame--;
+    }
+    
+    // Detect button press (transition from not pressed to pressed)
+    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick));
+
+    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held. Logic explained by Git Copilot.
+    AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
+    
+    // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
+    if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
+    {
+        if (Keyboard.isPressed(basic)) 
+        {
+            currentAttackType = 0;// punch
+
+        }
+        else if (Keyboard.isPressed(kick))
+        {
+            currentAttackType = 1;// kick
+        }
+        inAttackAnimation = true;  // start an attack animation  
+        attackAnimationTimer = 0;  // reset timer to beginning of animation
+        attackFrame = 0;  // start at frame 0
+        lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
+
+        
+
+        
+    }
 }
 
 void player::generalPlayerMovementControl(int frameTime){
