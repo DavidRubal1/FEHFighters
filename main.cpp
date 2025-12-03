@@ -7,8 +7,6 @@
 #include <string>
 #include "hitbox.h"
 #include "player.h" // uses hitbox.h
-#include "platform.h"  // uses hitbox.h
-#include "platformGroup.h" // usess platform.h 
 #include "animation.h"
 
 // debug
@@ -19,30 +17,37 @@
 
 int main()
 {
-    int frameTimeMilliseconds = 16; // default should be around 15-16
-    bool inMenu = true;
-    // TODO: put title screen stuff here
+    int frameTimeMilliseconds = 19; // time between frames
+    int numGames = 0, redWins = 0, blueWins = 0;
+    // program loop
     while(1){
-    while(inMenu){
+    // menu loop
+    while(1){
         LCD.SetFontColor(WHITE);
         LCD.DrawRectangle(0, 0, 320, 240);
 
         LCD.WriteAt("FEH Fighters", 76, 13);
-
+        // Draw new key art for the background?
+        FEHImage red;
+        red.Open("./PlayerRed/Right/PlayerRedRight0.png");
+        red.Draw(30, 90);
+        FEHImage blue;
+        blue.Open("./PlayerBlue/Left/PlayerBlueLeft0.png");
+        blue.Draw(276, 90);
         FEHIcon::Icon startButton;
-        startButton.SetProperties("Play", 76, 60, 136, 30, WHITE, RED);
+        startButton.SetProperties("Play", 76, 60, 168, 30, WHITE, RED);
         startButton.Draw();
 
         FEHIcon::Icon statsButton;
-        statsButton.SetProperties("Statistics", 76, 90, 136, 30, WHITE, RED);
+        statsButton.SetProperties("Statistics", 76, 90, 168, 30, WHITE, RED);
         statsButton.Draw();
 
         FEHIcon::Icon instructions;
-        instructions.SetProperties("How to Play", 76, 120, 136, 30, WHITE, RED);
+        instructions.SetProperties("How to Play", 76, 120, 168, 30, WHITE, RED);
         instructions.Draw();
 
         FEHIcon::Icon credits;
-        credits.SetProperties("Credits", 76, 150, 136, 30, WHITE, RED);
+        credits.SetProperties("Credits", 76, 150, 168, 30, WHITE, RED);
         credits.Draw();
 
         float x, y;
@@ -122,17 +127,46 @@ int main()
 
     player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, 160, 160, RED);
     player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_M, 230, 160, BLUE);
-    platformGroup stage1;
-    stage1.addPlatform(50, 180, 268, 240, 0x2e2e2e);
-    stage1.addPlatform(106, 140, 213, 145, WHITE);
     FEHIcon::Icon backButton;
     backButton.SetProperties("X", 10, 10, 20, 20, WHITE, RED);
     
+    FEHImage background;
+    background.Open("./Background/FEHBackgroundVer3.png");
+    FEHImage RedUI;
+    RedUI.Open("./UI/RedUI.png");
+    FEHImage BlueUI;
+    BlueUI.Open("./UI/BlueUI.png");
+    //FEHIcon::Icon RedPercent;
+    LCD.SetFontScale(0.5);
+    float p1Damage = 0.0, p2Damage = 0.0;
+    //RedPercent.SetProperties("0.0", 80, 200, 39, 39, TRANSPARENT, WHITE);
     while (1) {
+        // redraw background
+        background.Draw(0,0);
+        // redraw UI
+        RedUI.Draw(80, 200);
+        // TODO: update percent with damage
+        p1Damage = Player1.getDamage();
+        std::string printP1Damage= std::to_string(p1Damage);
+        int p1DecimalIndex = printP1Damage.find(".");
+        printP1Damage = printP1Damage.substr(0, p1DecimalIndex) + printP1Damage.substr(p1DecimalIndex, 2);
+        p2Damage = Player2.getDamage();
+        std::string printP2Damage= std::to_string(p2Damage);
+        int p2DecimalIndex = printP2Damage.find(".");
+        printP2Damage = printP2Damage.substr(0, p2DecimalIndex) + printP2Damage.substr(p2DecimalIndex, 2);
+        LCD.SetFontColor(WHITE);
+        LCD.WriteAt(printP1Damage, 90, 212);
+        BlueUI.Draw(201,200);
+        LCD.WriteAt(printP2Damage, 211, 212);
+        
+
+
+ 
+        
         // draw stage platforms and border
-        stage1.drawAllPlatforms();
-        LCD.SetFontColor(0x313030);
-        LCD.DrawRectangle(0,0, 320, 240);
+        //stage1.drawAllPlatforms();
+        //LCD.SetFontColor(0x313030);
+        //LCD.DrawRectangle(0,0, 320, 240);
 
         // get an array of [XPOS, YPOS] for player 1
         //std::vector<int> XYPos_Player1 = Player1.getXYPosition();
@@ -156,10 +190,12 @@ int main()
             LCD.FillRectangle(0, 0, 320, 240);
             break;
         }
+
         // update frame
         LCD.Update();
         Sleep(frameTimeMilliseconds);
     }
+    LCD.SetFontScale(1);
 }
     return 0;
 }
