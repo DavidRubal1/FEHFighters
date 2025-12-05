@@ -8,13 +8,13 @@ class animation{
 
     private:
         int currentAnimationID = -1;
-
         int color;
         timer animationTimer;
+        timer holdTime;
 };
 
 animation::animation(int color)
-: animationTimer(){
+: animationTimer(), holdTime(){
     this->color = color;
 }
 
@@ -50,13 +50,19 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
             strcat(filePath, "/Right");
         }
         strcat(filePath, fileBaseName);
-        printf("animationTimerTime = %d", animationTimer.getCurrentTimerTime());
-        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()/frameLength).c_str());
+        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
+        printf("Filename: %s, frame: %d, frameLength: %d", filePath, animationTimer.getCurrentTimerTime(), frameLength);
         strcat(filePath, ".png"); 
         FEHImage drawAnimation;
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        animationTimer.incrementTimer();
+        if(holdTime.getCurrentTimerTime() < frameLength - 1){
+            holdTime.incrementTimer();
+        }else{
+            animationTimer.incrementTimer();
+            holdTime.resetTimer();
+        }
+        
     }
 
 }
@@ -74,19 +80,20 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int final
         if(!animationTimer.isActive()){
             animationTimer.resetTimer();
         }
-    }else{
-
     }
     if(animationTimer.isActive()){
         strcat(filePath, fileBaseName);
-        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()/frameLength).c_str());
+        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
         strcat(filePath, ".png");
         FEHImage drawAnimation;
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        animationTimer.incrementTimer();
-    }else{
-
+                if(holdTime.getCurrentTimerTime() < frameLength - 1){
+            holdTime.incrementTimer();
+        }else{
+            animationTimer.incrementTimer();
+            holdTime.resetTimer();
+        }
     }
 }
 

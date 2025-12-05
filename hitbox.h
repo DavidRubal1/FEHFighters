@@ -63,18 +63,12 @@ void hitbox::debugDrawHitbox(int color){
 // tests intersection of this and element, assuming that both are rectangluar
 bool hitbox::rectangleIntersects(hitbox element){
     std::vector<int> elementCoords = element.getCoordinates();
-
-
     // x1 and y1 and the upper left corners, x2 and y2 are the lower right corners
 
     // The following 3 lines of code adapted from StackExchange user davin
     // Url: https://math.stackexchange.com/questions/99565/simplest-way-to-calculate-the-intersect-area-of-two-rectangles
     int x_overlap = fmax(0, fmin(x2, elementCoords[2]) - fmax(x1, elementCoords[0]));
     int y_overlap = fmax(0, fmin(y2, elementCoords[3]) - fmax(y1, elementCoords[1]));
-    printf("X1: %d\nY1: %d\nX2: %d\nY2: %d\n", x1, y1, x2, y2);
-    printf("PX1: %d\nPY1: %d\nPX2: %d\nPY2: %d\n", elementCoords[0], elementCoords[1], elementCoords[2], elementCoords[3]);
-    
-    printf("X_Overlap: %d\nY_Overlap: %d\n", x_overlap, y_overlap);
     int overlapArea = x_overlap * y_overlap;
 
     return overlapArea > 0;

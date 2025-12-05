@@ -70,13 +70,14 @@ class player{
         // animation timers 
         // THIS: I could also just not use the frame time and increment each frame...
         animation playerAnimator;
-        animationType idleAnimation = {"/Idle/Idle", 59, true, 0, 30};
+        animationType idleAnimation = {"/Idle/Idle", 1, true, 0, 30};
         animationType dashAnimation = {"/Dash/Dash", 8, true, 1};
         animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
-        animationType punchAnimation = {"/Punch/", false, 3};
+        animationType punchAnimation;
+        
 
         animation doubleJumpAnimator;
-        animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 7, false, 3};
+        animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
 
         int doubleJumpX, doubleJumpY;
 
@@ -144,6 +145,12 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     basic = basicAttack;
     kick = kickAttack;
     playerColor = color;
+
+    //set up attack info
+    strcpy(punchAnimation.fileName, "/Punch/");
+    punchAnimation.ID = 3;
+    punchAnimation.looping = false;
+
 }
 
 hitbox player::getHitbox(){
@@ -170,14 +177,11 @@ void player::getHit(float force, float damageAmount, float angleRadians, int att
     // TODO: divide the power by a value that makes sense later
     // TOFIX: ATTACKS HIT MULTIPLE TIMES
     force = (((0.1 * (damage / 100) + 0.05 * (damage / 100) * damageAmount))* 200) + force;
-    printf("Force: %f", force);
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
     forceX = direction * force*cos(angleRadians);
     forceY = direction * force*sin(angleRadians);
-    printf("ForceX: %f", forceX);
-    printf("ForceY: %f", forceY);
     // apply force to player velocity
     velocityX += forceX;
     velocityY -= forceY;
@@ -224,9 +228,6 @@ void player::playAnimations(){
             playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
         }
     }
-    else{
-        playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
-    }
 
 
     if(doubleJumpUsed){
@@ -244,33 +245,33 @@ void player::playAnimations(){
         char filePath[64];
         
         // Determine the correct attack sprite directory based on player color, direction, and attack type
-        if(playerColor == RED)
-        {
-            if(direction == -1)
-            {
-                // Punch left or other left attacks
-                if(currentAttackType == 0){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
-                }
-                // Add more attack types here:
-                else if(currentAttackType == 1){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
-                }
-            }
-            else
-            {
-                //right attacks
-                if(currentAttackType == 0)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
-                }
-                // Add more attack types here:
-                else if(currentAttackType == 1)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
-                }
-            }
-        }
+        // if(playerColor == RED)
+        // {
+        //     if(direction == -1)
+        //     {
+        //         // Punch left or other left attacks
+        //         if(currentAttackType == 0){
+        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
+        //         }
+        //         // Add more attack types here:
+        //         else if(currentAttackType == 1){
+        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
+        //         }
+        //     }
+        //     else
+        //     {
+        //         //right attacks
+        //         if(currentAttackType == 0)
+        //         {
+        //             strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
+        //         }
+        //         // Add more attack types here:
+        //         else if(currentAttackType == 1)
+        //         {
+        //             strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
+        //         }
+        //     }
+        // }
         
 
 
@@ -306,24 +307,24 @@ void player::playAnimations(){
         }else{
             offsetPositionX = positionX+3;
         }
-        offsetPositionY = positionY + 5;
+        offsetPositionY = positionY;
         playerAnimator.playAnimation(punchAnimation.fileName, offsetPositionX, offsetPositionY, direction, punchAnimation.finalFrameNum, punchAnimation.frameLength, punchAnimation.looping, punchAnimation.ID); 
-        //gets proper animation frame
-        strcat(filePath, std::to_string(attackFrame).c_str()); 
-        strcat(filePath, ".png");
-        FEHImage punchImg;
-        punchImg.Open(filePath);
-        if(direction == -1)
-        {
-        punchImg.Draw(positionX-11, positionY);
-        }
-        else
-        {
-        punchImg.Draw(positionX, positionY);
+        // //gets proper animation frame
+        // strcat(filePath, std::to_string(attackFrame).c_str()); 
+        // strcat(filePath, ".png");
+        // FEHImage punchImg;
+        // punchImg.Open(filePath);
+        // if(direction == -1)
+        // {
+        // punchImg.Draw(positionX-11, positionY);
+        // }
+        // else
+        // {
+        // punchImg.Draw(positionX, positionY);
 
         
         
-    }
+    
         
         // Update attack animation timer
         attackAnimationTimer++;

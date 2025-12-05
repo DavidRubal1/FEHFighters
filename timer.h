@@ -13,6 +13,7 @@ class timer{
         int max;
         int current = 0;
         bool active = false;
+        int hold = 0;
 };
 
 timer::timer(){
