@@ -1,7 +1,7 @@
 class attack {
 
     public:
-        attack(int attackType,int hitHeight, int hitLength);
+        attack(int attackType,int hitHeight, int hitLength, int offsetX, int offsetY);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);
@@ -14,6 +14,8 @@ class attack {
         float getDamage();
         float getKnockback();
         float getAngle();
+        float getScaling();
+        int getHitstun();
 
         
         bool isActive();
@@ -24,10 +26,14 @@ class attack {
         int direction;   // -1 = left, 1 = right
         int positionX;
         int positionY;
+        int offX, offY;
+        int magicCorrectingFactor = 14;
 
         float damage;
         float knockback;
         float angle;
+        float scaling;
+        int hitstunFramesBase;
 
         float velocityX;
         float velocityY;
@@ -41,31 +47,38 @@ class attack {
         
         // hitbox for attack
         hitbox attackHitbox;
-        // work on this to improve the accuracy of attack hitboxes in motion
-        hitbox attackTracing;
+
 };
 
 // Constructor
-attack::attack(int attackType, int hitHeight, int hitLength)
-    : attackHitbox(hitHeight, hitLength), attackTracing(hitHeight, hitLength) {
+attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY)
+    : attackHitbox(hitHeight, hitLength){
     this->attackType = attackType;
     this->hitboxHeight = hitHeight;
     this->hitboxLength = hitLength;
+    this->offX = offsetX;
+    this->offY = offsetY;
     switch(attackType){
         case 0:
         damage = 4.0;
         knockback = 5.0;
         angle = 1.0;
+        scaling = 1.0;
+        hitstunFramesBase = 7;
         break;
         case 1:
         damage = 10.0;
-        knockback = 17.0;
+        knockback = 5.0;
         angle = 0.5;
+        scaling = 1.5;
+        hitstunFramesBase = 15;
         break;
         case 2:
         damage = 3.0;
         knockback = 4.0;
         angle = 1;
+        scaling = 1.5;
+        hitstunFramesBase = 5;
         break;
     }
 }
@@ -85,6 +98,12 @@ float attack::getKnockback(){
 float attack::getAngle(){
     return angle;
 }
+float attack::getScaling(){
+    return scaling;
+}
+int attack::getHitstun(){
+    return hitstunFramesBase;
+}
 
 
 // Get the attack's hitbox
@@ -94,9 +113,17 @@ hitbox attack::getHitbox(){
 
 // Update the position of the attack
 void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
-
-    this->positionX = posX;
-    this->positionY = posY;
+    printf("PosX Start: %d\n", posX);
+    // if(dir == 1){
+    //     //magic hitbox alignment voodoo
+    //     posX += magicCorrectingFactor;
+    // }
+    if(dir == 1){
+        this->positionX = posX + magicCorrectingFactor - offX;
+    }else{
+        this->positionX = posX - hitboxLength + offX;
+    }
+    this->positionY = posY + offY;
     this->direction = dir;
     updateAttackHitbox(attackHitboxActive);
 }
@@ -112,13 +139,13 @@ bool attack::isActive(){
 
 // Update the hitbox based on attack type and direction
 void attack::updateAttackHitbox(bool attackHitboxActive){
-    if(attackType == 0){  // punch
+
         if(direction == -1){
             // punch extends to the left
-            attackHitbox.updateHitbox(positionX - hitboxLength, positionY);
+            attackHitbox.updateHitbox(positionX, positionY);
         } else {
             // punch extends to the right
-            attackHitbox.updateHitbox(positionX + hitboxLength, positionY);
+            attackHitbox.updateHitbox(positionX, positionY);
         }
         if(attackHitboxActive){
             if(active){
@@ -127,8 +154,6 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
                 attackHitbox.debugDrawHitbox(WHITE);
             }
         }
-         
-    }
     // Add other attack types here as needed
 }
 
