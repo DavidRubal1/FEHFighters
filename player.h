@@ -5,7 +5,7 @@ class player{
         void dash(int direction);
         void enactPlayerMovement();
         void manageHitboxes(player *otherPlayer);
-        void getHit(float force,  float damageAmount, float angleRadians, int attackDirection);
+        void getHit(attack* activeAttack);
         void groundPlayer(int groundYLevel);
         
         void playAnimations();
@@ -111,7 +111,7 @@ class player{
         Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
         float damage = 0;
         // TODO: WORK ON IMPLEMENTING HITSTUN
-        bool inHitstun = false;
+        timer hitstunTimer;
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
@@ -145,7 +145,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10), kickAttack(1, 15, 10), projectileAtk(2, 10, 10),
+    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileAtk(2, 10, 10, 0, 0),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -192,24 +192,31 @@ void player::setXYVelocity(float x, float y){
     velocityX = x;
     velocityY = y;
 }
-
-void player::getHit(float force, float damageAmount, float angleRadians, int attackDirection){
+// TODO: rework this
+void player::getHit(attack* activeAttack){
     float forceX, forceY;
     // scale force based on current damage
     // TODO: scale the power by a value that makes sense later
-    force = (((0.1 * (damage / 100)))* 50) + force;
+    float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getScaling()) + (*activeAttack).getKnockback();
+
+    //TODO: calculate htistun scaling
+    // reset timing varibles before entering hitstun, or move those timers into a separate function
+    lagFrame = 0;
+    hitstunTimer.resetTimer();
+    hitstunTimer.changeTimerMax((*activeAttack).getHitstun());
+    hitstunTimer.isActive();
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
-    forceX = attackDirection * force*cos(angleRadians);
-    forceY = force*sin(angleRadians);
+    forceX = (*activeAttack).getDirection() * force*cos((*activeAttack).getAngle());
+    forceY = force*sin((*activeAttack).getAngle());
     // apply force to player velocity
 
     velocityX = forceX;
     velocityY = -1 * forceY;
     currentGravityForce = 0;
-    inHitstun = true;
-    damage += damageAmount;
+    
+    damage += (*activeAttack).getDamage();
 }
 
 // maybe I dont do this?
@@ -222,7 +229,8 @@ void player::updateTimers(){
 
 void player::playAnimations(){
     // determine the current animation to play and play it
-    if(!inAttackAnimation){
+    if(!hitstunTimer.isActive()){
+        if(!inAttackAnimation){
         if(lagFrame == 0){
             if(grounded){
                 if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){  //dash right
@@ -241,10 +249,15 @@ void player::playAnimations(){
         } else{
             playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
         }
+        }
+    }else{
+        //potentially add a "hit" animation
+        playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
     }
+    
 
     // play double jump animation
-    if(doubleJumpUsed){
+    if(doubleJumpUsed && !hitstunTimer.isActive()){
         doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
     }else{
         doubleJumpAnimator.resetTimer();
@@ -252,7 +265,7 @@ void player::playAnimations(){
     
     //attack animation 
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
-    if(inAttackAnimation){
+    if(inAttackAnimation && !hitstunTimer.isActive()){
         char filePath[64];
         
         // Determine the correct attack sprite directory based on player color, direction, and attack type
@@ -377,9 +390,7 @@ void player::manageHitboxes(player *otherPlayer){
 
 void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
         if((*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
-
-            (*otherPlayer).getHit((*activeAttack).getKnockback(), (*activeAttack).getDamage(), (*activeAttack).getAngle(), (*activeAttack).getDirection());
-
+            (*otherPlayer).getHit(activeAttack);
             // disable attack to prevent attack from hitting multiple times in consecutive frames
             (*activeAttack).updateActiveState(false);
         }
@@ -411,118 +422,123 @@ void player::action(){
     if(lagFrame > 0){
         lagFrame--;
     }
-    
-    // Detect button press (transition from not pressed to pressed)
-    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile));
+    if(!hitstunTimer.isActive()){
+        // Detect button press (transition from not pressed to pressed)
+        bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile));
 
-    //prevents holding of attacks.
-    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
-    AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
-    
-    // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
-    if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
-    {
-        if (Keyboard.isPressed(basic)) 
+        //prevents holding of attacks.
+        bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
+        AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
+        
+        // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
+        if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
         {
-            currentAttackType = 0;// punch
-            punch.updateActiveState(true);
+            if (Keyboard.isPressed(basic)) 
+            {
+                currentAttackType = 0;// punch
+                punch.updateActiveState(true);
+
+            }
+            else if (Keyboard.isPressed(kick))
+            {
+                currentAttackType = 1; //kick
+                kickAttack.updateActiveState(true);
+            }
+            else if (Keyboard.isPressed(projectile))
+            {
+                currentAttackType = 2; //projectile
+                projectileAtk.updateActiveState(true);
+            }
+            inAttackAnimation = true;  //indicates attack animation is being played 
+            attackAnimationTimer = 0;  // reset timer to beginning of animation
+            lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
 
         }
-        else if (Keyboard.isPressed(kick))
-        {
-            currentAttackType = 1; //kick
-            kickAttack.updateActiveState(true);
-        }
-        else if (Keyboard.isPressed(projectile))
-        {
-            currentAttackType = 2; //projectile
-            projectileAtk.updateActiveState(true);
-        }
-        inAttackAnimation = true;  //indicates attack animation is being played 
-        attackAnimationTimer = 0;  // reset timer to beginning of animation
-        lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
-
     }
+    
+    
 }
 
 
 
 void player::generalPlayerMovementControl(){
-    // grounded movement
-    if(grounded){
-        if(lagFrame <= 0 && !inAttackAnimation){
-            if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
-                if(!inDashLag){
-                    // move left
-                    if(Keyboard.isPressed(left)){
-                        direction = -1;
-                        if(velocityX >= 0){
-                            // dash if turning around or stationary
-                            dash(direction);
-                        }else{
-                            velocityX -= accelerationX;
+    if(!hitstunTimer.isActive()){
+        // grounded movement
+        if(grounded){
+            if(lagFrame <= 0 && !inAttackAnimation){
+                if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
+                    if(!inDashLag){
+                        // move left
+                        if(Keyboard.isPressed(left)){
+                            direction = -1;
+                            if(velocityX >= 0){
+                                // dash if turning around or stationary
+                                dash(direction);
+                            }else{
+                                velocityX -= accelerationX;
+                            }
+                        }
+                        // move right
+                        if(Keyboard.isPressed(right)){
+                            direction = 1;
+                            if(velocityX <= 0){
+                                dash(direction);
+                            }else{
+                                velocityX += accelerationX;
+                            }
+                            
+                        }
+                    }else{
+                        //turn around mid-dash
+                        if(Keyboard.isPressed(right)){
+                            direction = 1;
+                        }else if(Keyboard.isPressed(left)){
+                            direction = -1;
                         }
                     }
-                    // move right
-                    if(Keyboard.isPressed(right)){
-                        direction = 1;
-                        if(velocityX <= 0){
-                            dash(direction);
-                        }else{
-                            velocityX += accelerationX;
-                        }
-                        
-                    }
-                }else{
-                    //turn around mid-dash
-                    if(Keyboard.isPressed(right)){
-                        direction = 1;
-                    }else if(Keyboard.isPressed(left)){
-                        direction = -1;
-                    }
+                    
                 }
+                //jump when on ground
+                if(Keyboard.isPressed(up)){
+                    currentGravityForce = 0;
+                    velocityY -= jumpForce;
+                    inJumpLag = true;
+                }
+            }
                 
-            }
-            //jump when on ground
-            if(Keyboard.isPressed(up)){
-                currentGravityForce = 0;
-                velocityY -= jumpForce;
-                inJumpLag = true;
-            }
                 
-        }
-            
-            
-    }else{ 
-        // airborne movement (grouded == false)
-        if(!Keyboard.isPressed({left, right})){
-            if(Keyboard.isPressed(left)){
-                velocityX -= accelerationX * airspeedMod;
+        }else{ 
+            // airborne movement (grouded == false)
+            if(!Keyboard.isPressed({left, right})){
+                if(Keyboard.isPressed(left)){
+                    velocityX -= accelerationX * airspeedMod;
+                }
+                if(Keyboard.isPressed(right)){
+                    velocityX += accelerationX * airspeedMod;
+                }
             }
-            if(Keyboard.isPressed(right)){
-                velocityX += accelerationX * airspeedMod;
+            // fast fall when down is pressed
+            if(Keyboard.isPressed(down) && !inJumpLag){
+                // increase gravity for fast fall
+                gravity = fastFallGravity;
+                // set fast fall state to true
+                inFastFall = true;
             }
-        }
-        // fast fall when down is pressed
-        if(Keyboard.isPressed(down) && !inJumpLag){
-            // increase gravity for fast fall
-            gravity = fastFallGravity;
-            // set fast fall state to true
-            inFastFall = true;
-        }
-        // use double jump when jumping in air
-        if(lagFrame <= 0 && !inAttackAnimation){
-            if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
-                inFastFall = false;
-                gravity = tempGravity;
-                doubleJumpUsed = true;
-                currentGravityForce = 0;
-                velocityY =- (jumpForce-1);
-                doubleJumpX = positionX - 3;
-                doubleJumpY = positionY + hitboxHeight - 1;
+            // use double jump when jumping in air
+            if(lagFrame <= 0 && !inAttackAnimation){
+                if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
+                    inFastFall = false;
+                    gravity = tempGravity;
+                    doubleJumpUsed = true;
+                    currentGravityForce = 0;
+                    velocityY =- (jumpForce-1);
+                    doubleJumpX = positionX - 3;
+                    doubleJumpY = positionY + hitboxHeight - 1;
 
+                }
             }
         }
+    
     }
 
     // other functionality, TODO: move these to a separate function or something
@@ -571,6 +587,7 @@ void player::groundPlayer(int groundYLevel){
     positionY = groundYLevel - hitboxHeight;
 }
 
+
 void player::enactPlayerMovement(){
     // apply velocity, typecast to int to prevent unwanted truncating of position after change
     // ex: 100 + 2.4 = 102, but 100 - 2.4 = 97, rounding down works against us with negative vel
@@ -582,16 +599,21 @@ void player::enactPlayerMovement(){
         velocityX = 0;
     }
 
-    // decay X-velocity exponentially when not moving horizontally
-    if(!Keyboard.areAnyPressed({left,right})|| inAttackAnimation){
-        velocityX *= pow(velocityXDecay, abs(velocityX));
+    if(!hitstunTimer.isActive()){
+            // decay X-velocity exponentially when not moving horizontally
+        if(!Keyboard.areAnyPressed({left,right})|| inAttackAnimation){
+            velocityX *= pow(velocityXDecay, abs(velocityX));
+        }else{
+            if(velocityX > runSpeedMax){
+                velocityX = runSpeedMax;
+            }else if(velocityX < (runSpeedMax * -1)){
+                velocityX = runSpeedMax * -1;
+            }
+        }
     }else{
-        if(velocityX > runSpeedMax){
-            velocityX = runSpeedMax;
-        }else if(velocityX < (runSpeedMax * -1)){
-            velocityX = runSpeedMax * -1;
+        //have a separate x-velocity decay when in hitstun
     }
-    }
+
     
 
     // custom-bake conditions to fit the dimensions of the platform(s)
@@ -627,9 +649,14 @@ void player::enactPlayerMovement(){
     }
     if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 152)  && !Keyboard.isPressed(down)){
         // Player has landed on the upper platform
+        // reset grounded state
         groundPlayer(140);
     }
     
     // update hitbox position to follow player position
     playerHitbox.updateHitbox(positionX, positionY);
+    if(hitstunTimer.isActive()){
+        hitstunTimer.incrementTimer();
+        hitstunTimer.updateTimerState();
+    }
 }
