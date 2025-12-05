@@ -15,6 +15,8 @@ class player{
 
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void action();
+        attack* getCurrentAttack();
+        animationType getCurrentAttackAnimation();
 
 
         std::vector<int> getXYPosition();
@@ -76,7 +78,12 @@ class player{
         animationType idleAnimation = {"/Idle/Idle", 1, true, 0, 30};
         animationType dashAnimation = {"/Dash/Dash", 8, true, 1};
         animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
+
+        // attack animations
         animationType punchAnimation;
+        animationType kickAnimation;
+        animationType projectileAnimation;
+
         
         animation doubleJumpAnimator;
         animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
@@ -154,6 +161,15 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     strcpy(punchAnimation.fileName, "/Punch/");
     punchAnimation.ID = 3;
     punchAnimation.looping = false;
+
+    strcpy(kickAnimation.fileName, "/Kick/");
+    kickAnimation.ID = 4;
+    kickAnimation.looping = false;
+
+    strcpy(projectileAnimation.fileName, "/Projectile/");
+    projectileAnimation.ID = 5;
+    projectileAnimation.looping = true;
+    // maybe add a separate variable to indicate that this should be separated from the player.
 }
 
 hitbox player::getHitbox(){
@@ -287,7 +303,11 @@ void player::playAnimations(){
         {
             totalDuration += FrameTiming[currentAttackType][i];
         }
-        punchAnimation.finalFrameNum = totalDuration;
+        // change this to work with other attacks as well
+        animationType currentAttackAnimation = getCurrentAttackAnimation();
+        currentAttackAnimation.finalFrameNum = totalDuration;
+
+        
         
         // Determine current frame based on timer
         int elapsedTime = 0;
@@ -301,7 +321,7 @@ void player::playAnimations(){
             if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
             {
                 attackFrame = i;
-                punchAnimation.frameLength = FrameTiming[currentAttackType][i];
+                currentAttackAnimation.frameLength = FrameTiming[currentAttackType][i];
                 attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
                 break;
             }
@@ -314,7 +334,7 @@ void player::playAnimations(){
             offsetPositionX = positionX;
         }
         offsetPositionY = positionY;
-        playerAnimator.playAnimation(punchAnimation.fileName, offsetPositionX, offsetPositionY, direction, punchAnimation.finalFrameNum, punchAnimation.frameLength, punchAnimation.looping, punchAnimation.ID); 
+        playerAnimator.playAnimation(currentAttackAnimation.fileName, offsetPositionX, offsetPositionY, direction, currentAttackAnimation.finalFrameNum, currentAttackAnimation.frameLength, currentAttackAnimation.looping, currentAttackAnimation.ID); 
         // //gets proper animation frame
         // strcat(filePath, std::to_string(attackFrame).c_str()); 
         // strcat(filePath, ".png");
@@ -344,37 +364,75 @@ void player::playAnimations(){
     }
 }
 
+attack* player::getCurrentAttack(){
+    switch(currentAttackType){
+        case 0: 
+        return &punch;
+        break;
+        case 1: 
+        return &kickAttack;
+        break;
+        case 2:
+        return &projectile;
+        break;
+    }
+}
+
+animationType player::getCurrentAttackAnimation(){
+    switch(currentAttackType){
+        case 0: 
+        return punchAnimation;
+        break;
+        case 1: 
+        return kickAnimation;
+        break;
+        case 2:
+        return projectileAnimation;
+        break;
+    }
+}
+
 
 
 void player::manageHitboxes(player *otherPlayer){
-    
-    switch(currentAttackType){
-        case 0:
-        punch.updateAttackPosition(positionX, positionY, direction);
-        if(punch.isActive() && attackHitboxActive){
-            checkAttackHits(otherPlayer, &punch);
+    if(currentAttackType != -1){
+        attack* currentAttack = getCurrentAttack();
+        (*currentAttack).updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
+        // TODO: the attack is only active on the last frame now
+        if(attackHitboxActive){
+            checkAttackHits(otherPlayer, currentAttack);
         }
-        
-        break;
-        case 1:
-        kickAttack.updateAttackPosition(positionX, positionY, direction);
-        if(kickAttack.isActive() && attackHitboxActive){
-            checkAttackHits(otherPlayer, &kickAttack);
-        }
-        break;
-        case 2:
-        if(projectile.isActive() && attackHitboxActive){
-            checkAttackHits(otherPlayer, &projectile);
-        }
-        //projectiles will move on their own
-        break;
     }
+
+    // switch(currentAttackType){
+    //     case 0:
+    //     punch.updateAttackPosition(positionX, positionY, direction);
+    //     if(punch.isActive() && attackHitboxActive){
+    //         checkAttackHits(otherPlayer, &punch);
+    //     }
+        
+    //     break;
+    //     case 1:
+    //     kickAttack.updateAttackPosition(positionX, positionY, direction);
+    //     if(kickAttack.isActive() && attackHitboxActive){
+    //         checkAttackHits(otherPlayer, &kickAttack);
+    //     }
+    //     break;
+    //     case 2:
+    //     if(projectile.isActive() && attackHitboxActive){
+    //         checkAttackHits(otherPlayer, &projectile);
+    //     }
+    //     //projectiles will move on their own
+    //     break;
+    // }
     
 }
 
 void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
         if((*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
+
             (*otherPlayer).getHit((*activeAttack).getKnockback(), (*activeAttack).getDamage(), (*activeAttack).getAngle(), (*activeAttack).getDirection());
+
             // disable attack to prevent attack from hitting multiple times in consecutive frames
             (*activeAttack).updateActiveState(false);
         }
@@ -472,6 +530,12 @@ void player::generalPlayerMovementControl(){
                             velocityX += accelerationX;
                         }
                         
+                    }
+                }else{
+                    if(Keyboard.isPressed(right)){
+                        direction = 1;
+                    }else if(Keyboard.isPressed(left)){
+                        direction = -1;
                     }
                 }
                 

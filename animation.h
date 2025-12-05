@@ -51,7 +51,6 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
         }
         strcat(filePath, fileBaseName);
         strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
-        printf("Filename: %s, frame: %d, frameLength: %d", filePath, animationTimer.getCurrentTimerTime(), frameLength);
         strcat(filePath, ".png"); 
         FEHImage drawAnimation;
         drawAnimation.Open(filePath);
