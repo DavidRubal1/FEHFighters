@@ -1,29 +1,32 @@
 class player{
     public:
         player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
-        void generalPlayerMovementControl(int frameTime);
+        void generalPlayerMovementControl();
         void dash(int direction);
-        void enactPlayerMovement(int frameTime);
-        void getHit(float force,  float damageAmount, int angleDegrees, int attackDirection);
+        void enactPlayerMovement();
+        void manageHitboxes(player *otherPlayer);
+        void getHit(float force,  float damageAmount, float angleRadians, int attackDirection);
+        void groundPlayer(int groundYLevel);
         
-        void playAnimations(int frameTime);
-        void dashAnimation(int frameTime);
-        void crouchAnimation(int frameTime);
-        void idleAnimation(int frameTime);
-        
-        void doubleJumpAnimation(int frameTime);
+        void playAnimations();
 
-        bool inAnimation();
+        void updateTimers();
+
         void resetIfOffscreen();
-        void action(int frameTime);
+
+        void checkAttackHits(player *otherPlayer, attack *activeAttack);
+        void action();
+        attack* getCurrentAttack();
+        animationType getCurrentAttackAnimation();
+
+
         std::vector<int> getXYPosition();
         std::vector<float> getXYVelocity();
         void setXYVelocity(float x, float y);
         hitbox getHitbox();
         int lagFrame = 0;
         float getDamage();
-        // implement animation players to work
-        //animation animationPlayer;
+
 
     private:
         // player attributes
@@ -39,18 +42,24 @@ class player{
         // hitbox for player
         hitbox playerHitbox;
 
-        //attack hitboxes
-        
+        //attacks
+        attack punch;
+        attack kickAttack;
+        attack projectile;
+
         // general player speed
         float velocityX = 0, velocityY = 0;
+        int knockbackVelX, knockbackVelY;
         int direction = 1;
+
         // unused maybe use this to limit speed? knockback will make this hard
         float velocityXLimit = 20, velocityYLimit = 20;
 
         // grounded speed stuff
-        float accelerationX = 1.10;
-        float dashSpeedMod = 1.80;
-        float velocityXDecay = 0.90, velocityXDecayTemp = 0.90;
+        float accelerationX = 1.1;
+        float dashSpeedMod = 2;
+        float runSpeedMax = 3;
+        float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
         float velocityXDecayDash = 0.95;
         // grounded state
         bool grounded = true;
@@ -61,24 +70,28 @@ class player{
 
         // dash variables
         bool inDashLag = false;
-        float dashLagTimerMax = 3; // 3 frames
+        float dashLagTimerMax = 4; // 3 frames
         float dashLagTimer = 0;
         
         // animation timers 
         // THIS: I could also just not use the frame time and increment each frame...
-        bool inDashAnimation = false;
-        int dashAnimationTimerMax = 8; // 9 frames, change every frame
-        int dashAnimationTimer = 0;
-        bool inIdle = false;
-        int idleTimerMax = 59; // 2 frames, change every 30 frames
-        int idleTimer = 0;
+        animation playerAnimator;
+        animationType idleAnimation = {"/Idle/Idle", 1, true, 0, 30};
+        animationType dashAnimation = {"/Dash/Dash", 8, true, 1};
+        animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
 
-        int doubleJumpTimerMax = 7; // 4 frames, change every other frame
-        int doubleJumpTimer = 0;
-        bool doubleJumpAnimationEnd = false;
+        // attack animations
+        animationType punchAnimation;
+        animationType kickAnimation;
+        animationType projectileAnimation;
+
+        
+        animation doubleJumpAnimator;
+        animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
+
         int doubleJumpX, doubleJumpY;
 
-        bool inCrouch = false;
+
 
         //jump variables
         float jumpForce = 6;
@@ -86,19 +99,19 @@ class player{
         float jumpLagTimerMax = 3; // 3 frames
         float jumpLagTimer = 0;
 
-        // unused, possibly use for animation related stuff
-        float animationTimer = 0;
 
         // gravity
-        float fastFallGravity = 0.60;
+        float fastFallGravity = 0.20;
         bool inFastFall = false;
-        float gravity = 0.1, tempGravity = 0.1;
-        float currentGravityForce = 0;
-        float maxGravityForce = 1.5;
+        float gravity = 0.08, tempGravity = 0.08;
+        float currentGravityForce = 0, groundedGravityForce = 0.3;
+        float maxGravityForce = 1.2;
 
         // controls
         Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
         float damage = 0;
+        // TODO: WORK ON IMPLEMENTING HITSTUN
+        bool inHitstun = false;
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
@@ -111,13 +124,13 @@ class player{
         // Number of images/frames for each attack type
         int attackFrameCount[3] = {5, 5, 5};  // punch has 5 frames, kick has 5 frames
         
-        // Frame timing arrays for each attack (in milliseconds per frame)
+        // Frame timing arrays for each attack (in number of frames)
         // punch: frames 0-4 timing
         int FrameTiming[3][5] = 
         {
-            {15, 15, 40, 40, 20},
-            {20, 20, 50, 50, 30},
-            {40, 60, 60, 30, 30}
+            {1, 1, 3, 2, 2},
+            {2, 2, 3, 3, 2},
+            {4, 6, 6, 3, 3}
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
@@ -132,7 +145,9 @@ class player{
 
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
-    : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY, true){
+    : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
+    punch(0, 15, 10), kickAttack(1, 15, 10), projectile(2, 10, 10),
+    playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
     up = upwards;
@@ -145,6 +160,20 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     kick = kickAttack;
     projectile = projectileAttack;
     playerColor = color;
+
+    //set up attack info
+    strcpy(punchAnimation.fileName, "/Punch/");
+    punchAnimation.ID = 3;
+    punchAnimation.looping = false;
+
+    strcpy(kickAnimation.fileName, "/Kick/");
+    kickAnimation.ID = 4;
+    kickAnimation.looping = false;
+
+    strcpy(projectileAnimation.fileName, "/Projectile/");
+    projectileAnimation.ID = 5;
+    projectileAnimation.looping = true;
+    // maybe add a separate variable to indicate that this should be separated from the player.
 }
 
 hitbox player::getHitbox(){
@@ -165,127 +194,61 @@ void player::setXYVelocity(float x, float y){
     velocityY = y;
 }
 
-void player::getHit(float force, float damageAmount, int angleRadians, int attackDirection){
+void player::getHit(float force, float damageAmount, float angleRadians, int attackDirection){
     float forceX, forceY;
     // scale force based on current damage
-    // TODO: divide the power by a value that makes sense later
-    force = pow(force, damage/5);
+    // TODO: scale the power by a value that makes sense later
+    force = (((0.1 * (damage / 100)))* 50) + force;
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
-    forceX = direction * force*cos(angleRadians);
-    forceY = direction * force*sin(angleRadians);
+    forceX = attackDirection * force*cos(angleRadians);
+    forceY = force*sin(angleRadians);
     // apply force to player velocity
-    velocityX += forceX;
-    velocityY -= forceY;
-    
+
+    velocityX = forceX;
+    velocityY = -1 * forceY;
+    currentGravityForce = 0;
+    inHitstun = true;
     damage += damageAmount;
 }
 
+// maybe I dont do this?
+void player::updateTimers(){
 
-void player::dashAnimation(int frameTime){
-    char filePath[64];
-    if(playerColor == RED){
-        if(direction == -1){
-            strcpy(filePath, "./PlayerRed/DashLeft/RedDashLeft");
-        }else{
-            strcpy(filePath, "./PlayerRed/DashRight/RedDashRight");
-        }
-    }else{
-        if(direction == -1){
-            strcpy(filePath, "./PlayerBlue/DashLeft/BlueDashLeft");
-        }else{
-            strcpy(filePath, "./PlayerBlue/DashRight/BlueDashRight");
-        }
-    }
-    inDashAnimation = true;
-    FEHImage drawDash;
-    strcat(filePath, std::to_string(dashAnimationTimer).c_str());
-    strcat(filePath, ".png");
-    drawDash.Open(filePath);
-    drawDash.Draw(positionX, positionY);
-    
-}
-void player::crouchAnimation(int frameTime){
-    char filePath[64];
-    inDashAnimation = false;
-    if(playerColor == RED){
-        if(direction == -1){
-            strcpy(filePath, "./PlayerRed/CrouchLeft/RedCrouchLeft");
-        }else{
-            strcpy(filePath, "./PlayerRed/CrouchRight/RedCrouchRight");
-        }
-    }else{
-        if(direction == -1){
-            strcpy(filePath, "./PlayerBlue/CrouchLeft/BlueCrouchLeft");
-        }else{
-            strcpy(filePath, "./PlayerBlue/CrouchRight/BlueCrouchRight");
-        }
-    }
-    inCrouch = true;
-    FEHImage drawDash;
-    strcat(filePath, ".png");
-    drawDash.Open(filePath);
-    drawDash.Draw(positionX, positionY);
 }
 
-void player::idleAnimation(int frameTime){
-        inIdle = true;
-        char filePath[64];
-        //play idle animation
-        FEHImage idle;
-        if(playerColor == RED){
-            if(direction == -1){
-                strcpy(filePath, "./PlayerRed/Left/PlayerRedLeft");
+
+
+
+void player::playAnimations(){
+    // determine the current animation to play and play it
+    if(!inAttackAnimation){
+        if(lagFrame == 0){
+            if(grounded){
+                if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){  //dash right
+                    // Dash animation
+                    playerAnimator.playAnimation(dashAnimation.fileName, positionX, positionY, direction, dashAnimation.finalFrameNum, 1, dashAnimation.looping, dashAnimation.ID);
+                } else if(Keyboard.isPressed(down)){
+                    // Crouch animation
+                    playerAnimator.playAnimation(crouchAnimation.fileName, positionX, positionY, direction, crouchAnimation.finalFrameNum, 1, crouchAnimation.looping, crouchAnimation.ID);
+                }else{
+                    playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
+                }
             }else{
-                strcpy(filePath, "./PlayerRed/Right/PlayerRedRight");
+                //airborne animation, replace the placeholder idle animation when able
+                playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
             }
-        }else{
-            if(direction == -1){
-                strcpy(filePath, "./PlayerBlue/Left/PlayerBlueLeft");
-            }else{
-                strcpy(filePath, "./PlayerBlue/Right/PlayerBlueRight");
-            }
+        } else{
+            playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
         }
-        strcat(filePath, std::to_string(idleTimer/30).c_str());
-        strcat(filePath, ".png");
-        idle.Open(filePath);
-        idle.Draw(positionX, positionY);
-}
-
-void player::doubleJumpAnimation(int frameTime){
-    char filePath[64];
-    //play doublejump animation
-    FEHImage doubleJump;
-    strcpy(filePath, "./Double Jump Frames/doubleJumpFrame");
-    strcat(filePath, std::to_string(doubleJumpTimer/2).c_str());
-    strcat(filePath, ".png");
-    doubleJump.Open(filePath);
-    doubleJump.Draw(doubleJumpX - 3, doubleJumpY+hitboxHeight);
-}
-
-void player::playAnimations(int frameTime){
-    
-    if(!grounded){
-        inDashAnimation = false;
-    }
-    if(!grounded || !Keyboard.isPressed(down) || Keyboard.areAnyPressed({left, right})){ // uncrouch when not holding down
-            inCrouch = false;
     }
 
-    if((grounded && (Keyboard.areAnyPressed({left, right}) || inDashAnimation))&&!inAttackAnimation){  //dash right
-        dashAnimation(frameTime);
-    }else if((grounded && Keyboard.isPressed(down) && !Keyboard.areAnyPressed({left, right}))&&!inAttackAnimation){
-        crouchAnimation(frameTime);
-    }else if (!inAttackAnimation){
-        idleAnimation(frameTime);
-    }
-
-    if(doubleJumpUsed && !doubleJumpAnimationEnd){
-        doubleJumpAnimation(frameTime);
-    }
-        if(!grounded){
-        inDashAnimation = false;
+    // play double jump animation
+    if(doubleJumpUsed){
+        doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
+    }else{
+        doubleJumpAnimator.resetTimer();
     }
     
     //attack animation 
@@ -294,52 +257,46 @@ void player::playAnimations(int frameTime){
         char filePath[64];
         
         // Determine the correct attack sprite directory based on player color, direction, and attack type
-        if(playerColor == RED)
-        {
-            if(direction == -1)
-            {
-                // Punch left
-                if(currentAttackType == 0)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/"); //sets the file path to the folder containing the left punch frames
-                }
-                //kick left
-                else if(currentAttackType == 1)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/"); //sets the file path to the folder containing the left kick frames
-                }
-                //projectile left
-                else if(currentAttackType == 2)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftProjectile/"); //sets the file path to the folder containing the left fireball frames
-                }
-            }
-            else
-            {
-                //right punch
-                if(currentAttackType == 0)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/"); //sets file path to right punch frames
-                }
-                //right kick
-                else if(currentAttackType == 1)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/"); //sets file path to right kick frames
-                }
-                //right projectile
-                else if (currentAttackType == 2)
-                {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightProjectile/"); //sets file path to right projectile frames
-                } 
-            }
-        }
-        
+        // if(playerColor == RED)
+        // {
+        //     if(direction == -1)
+        //     {
+        //         // Punch left or other left attacks
+        //         if(currentAttackType == 0){
+        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
+        //         }
+        //         // Add more attack types here:
+        //         else if(currentAttackType == 1){
+        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
+        //         }
+        //     }
+        //     else
+        //     {
+        //         //right attacks
+        //         if(currentAttackType == 0)
+        //         {
+        //             strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
+        //         }
+        //         // Add more attack types here:
+        //         else if(currentAttackType == 1)
+        //         {
+        //             strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
+        //         }
+        //     }
+        // }
+
+
         // Calculate total animation duration by summing all frame timings
         int totalDuration = 0;
         for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
         {
             totalDuration += FrameTiming[currentAttackType][i];
         }
+        // change this to work with other attacks as well
+        animationType currentAttackAnimation = getCurrentAttackAnimation();
+        currentAttackAnimation.finalFrameNum = totalDuration;
+
+        
         
         // Determine current frame based on timer
         int elapsedTime = 0;
@@ -353,96 +310,90 @@ void player::playAnimations(int frameTime){
             if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
             {
                 attackFrame = i;
+                currentAttackAnimation.frameLength = FrameTiming[currentAttackType][i];
                 attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
                 break;
             }
             elapsedTime += FrameTiming[currentAttackType][i];
         }
-        //gets proper animation frame
-        strcat(filePath, std::to_string(attackFrame).c_str()); 
-        strcat(filePath, ".png");
-        FEHImage punchImg;
-        punchImg.Open(filePath);
-        if(direction == -1)
-        {
-            punchImg.Draw(positionX-11, positionY);
+        int offsetPositionX, offsetPositionY;
+        if(direction == -1){
+            offsetPositionX = positionX-11;
+        }else{
+            offsetPositionX = positionX;
         }
-        else
-        {
-            punchImg.Draw(positionX, positionY);
-    }
-        
+        offsetPositionY = positionY;
+        playerAnimator.playAnimation(currentAttackAnimation.fileName, offsetPositionX, offsetPositionY, direction, currentAttackAnimation.finalFrameNum, currentAttackAnimation.frameLength, currentAttackAnimation.looping, currentAttackAnimation.ID); 
+    
         // Update attack animation timer
-        attackAnimationTimer += frameTime;
-        if(attackAnimationTimer >= totalDuration)
-        {
+        attackAnimationTimer++;
+        if(attackAnimationTimer >= totalDuration){
             inAttackAnimation = false;
             currentAttackType = -1;
             attackAnimationTimer = 0;
             attackHitboxActive = false;
-            lagFrame = 20;  //how many frames to lag after attack ends
+            lagFrame = 5;  // lag after attack ends
         }
     }
-    // idle animation
-    else if(!inAnimation()){
-        inIdle = true;
-    }
-    
-    // countdown timers
-    if(inDashAnimation){
-        if(grounded){
-            if(dashAnimationTimer < dashAnimationTimerMax){
-                dashAnimationTimer++;
-            }else{
-                inDashAnimation = false;
-                dashAnimationTimer = 0;
-            }
-        }else{
-            inDashAnimation = false;
-            dashAnimationTimer = 0;
-        }
-    }
+}
 
-    if(inIdle){
-        if(grounded || !inAnimation()){
-            if(idleTimer < idleTimerMax){
-                idleTimer++;
-            }else{
-                idleTimer = 0;
-            }
-        }else{
-            inIdle = false;
-            idleTimer = 0;
-        }
-        
+attack* player::getCurrentAttack(){
+    switch(currentAttackType){
+        case 0: 
+        return &punch;
+        break;
+        case 1: 
+        return &kickAttack;
+        break;
+        case 2:
+        return &projectile;
+        break;
     }
+}
 
-    if(doubleJumpUsed){
-        if(!grounded && doubleJumpTimer < doubleJumpTimerMax){
-            doubleJumpTimer++;
-        }else{
-            doubleJumpTimer = 0;
-            doubleJumpAnimationEnd = true;
-        }
-    }else{
-        doubleJumpTimer = 0;
-        doubleJumpAnimationEnd = true;
+animationType player::getCurrentAttackAnimation(){
+    switch(currentAttackType){
+        case 0: 
+        return punchAnimation;
+        break;
+        case 1: 
+        return kickAnimation;
+        break;
+        case 2:
+        return projectileAnimation;
+        break;
     }
+}
 
+void player::manageHitboxes(player *otherPlayer){
+    // manage projectiles differently that other attacks
+    if(currentAttackType != -1){
+        attack* currentAttack = getCurrentAttack();
+        (*currentAttack).updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
+        // TODO: the attack is only active on the last frame now
+        if(attackHitboxActive){
+            checkAttackHits(otherPlayer, currentAttack);
+        }
+    }
     
 }
 
-bool player::inAnimation(){
-    return inDashAnimation || inAttackAnimation || inCrouch;
+void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
+        if((*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
+
+            (*otherPlayer).getHit((*activeAttack).getKnockback(), (*activeAttack).getDamage(), (*activeAttack).getAngle(), (*activeAttack).getDirection());
+
+            // disable attack to prevent attack from hitting multiple times in consecutive frames
+            (*activeAttack).updateActiveState(false);
+        }
+
 }
 
+// TODO: rework this to make it less instant
 void player::resetIfOffscreen(){
-    // if playe position is off-screen
+    // if player position is off-screen
     if(positionX < 0 || positionX > 319 || positionY > 239 || positionY < 0){
-        // undraw player
-        LCD.SetFontColor(BLACK);
-        LCD.FillRectangle(positionX, positionY, hitboxLength, hitboxHeight);
-        // resets position
+        // resets position, velocity, and damage
         positionX = startingPosX;
         positionY = startingPosY;
         velocityX = 0;
@@ -452,12 +403,13 @@ void player::resetIfOffscreen(){
 }
 
 void player::dash(int direction){
-    velocityX += direction * accelerationX * dashSpeedMod;
+    velocityX = direction * runSpeedMax * 0.9;
     inDashLag = true;
     velocityXDecay = velocityXDecayDash;
 }
 
-void player::action(int frameTime){
+/*coded by Charlie Limbert*/
+void player::action(){
     // Decrease lag frame counter
     if(lagFrame > 0){
         lagFrame--;
@@ -475,61 +427,77 @@ void player::action(int frameTime){
     {
         if (Keyboard.isPressed(basic)) 
         {
-            currentAttackType = 0; //punch
+            currentAttackType = 0;// punch
+            punch.updateActiveState(true);
 
         }
         else if (Keyboard.isPressed(kick))
         {
             currentAttackType = 1; //kick
+            kickAttack.updateActiveState(true);
         }
         else if (Keyboard.isPressed(projectile))
         {
             currentAttackType = 2; //projectile
+            projectile.updateActiveState(true);
         }
         inAttackAnimation = true;  //indicates attack animation is being played 
         attackAnimationTimer = 0;  // reset timer to beginning of animation
         attackFrame = 0;  // start at frame 0
         lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
 
-        
-
-        
     }
 }
 
-void player::generalPlayerMovementControl(int frameTime){
 
+
+void player::generalPlayerMovementControl(){
+    // grounded movement
     if(grounded){
-        if(!Keyboard.isPressed({left, right})){
-            if(!inDashLag){
-                // move left
-                if(Keyboard.isPressed(left)){
-                    direction = -1;
-                    // dash if turning around or stationary
-                    if(velocityX >= 0){
-                        dash(direction);
+        if(lagFrame <= 0 && !inAttackAnimation){
+            if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
+                if(!inDashLag){
+                    // move left
+                    if(Keyboard.isPressed(left)){
+                        direction = -1;
+                        if(velocityX >= 0){
+                            // dash if turning around or stationary
+                            dash(direction);
+                        }else{
+                            velocityX -= accelerationX;
+                        }
                     }
-                    // normal acceleration
-                    velocityX -= accelerationX;
-                }
-                // move right
-                if(Keyboard.isPressed(right)){
-                    direction = 1;
-                    if(velocityX <= 0){
-                        dash(direction);
+                    // move right
+                    if(Keyboard.isPressed(right)){
+                        direction = 1;
+                        if(velocityX <= 0){
+                            dash(direction);
+                        }else{
+                            velocityX += accelerationX;
+                        }
+                        
                     }
-                    velocityX += accelerationX;
+                }else{
+                    //turn around mid-dash
+                    if(Keyboard.isPressed(right)){
+                        direction = 1;
+                    }else if(Keyboard.isPressed(left)){
+                        direction = -1;
+                    }
                 }
+                
             }
+            //jump when on ground
+            if(Keyboard.isPressed(up)){
+                currentGravityForce = 0;
+                velocityY -= jumpForce;
+                inJumpLag = true;
+            }
+                
+        }
             
-        }
-        // jump when grounded
-        if(Keyboard.isPressed(up)){
-            velocityY -= jumpForce;
-            inJumpLag = true;
-        }
-    }
-    else{ 
+            
+    }else{ 
         // airborne movement (grouded == false)
         if(!Keyboard.isPressed({left, right})){
             if(Keyboard.isPressed(left)){
@@ -539,30 +507,29 @@ void player::generalPlayerMovementControl(int frameTime){
                 velocityX += accelerationX * airspeedMod;
             }
         }
-        // fast fall
+        // fast fall when down is pressed
         if(Keyboard.isPressed(down) && !inJumpLag){
             // increase gravity for fast fall
             gravity = fastFallGravity;
             // set fast fall state to true
             inFastFall = true;
         }
-        // use double jump
-        if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
-            inFastFall = false;
-            gravity = tempGravity;
-            doubleJumpUsed = true;
-            currentGravityForce = 0;
-            velocityY =- jumpForce;
-            doubleJumpAnimationEnd = false;
-            doubleJumpX = positionX;
-            doubleJumpY = positionY;
-            // TODO: animate double jump
-            //FEHImage doubleJump;
-            //doubleJump.Open("doubleJumpFrames\)
+        // use double jump when jumping in air
+        if(lagFrame <= 0 && !inAttackAnimation){
+            if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
+                inFastFall = false;
+                gravity = tempGravity;
+                doubleJumpUsed = true;
+                currentGravityForce = 0;
+                velocityY =- (jumpForce-1);
+                doubleJumpX = positionX - 3;
+                doubleJumpY = positionY + hitboxHeight - 1;
+
+            }
         }
     }
 
-    // other
+    // other functionality, TODO: move these to a separate function or something
 
     // currently unused
     // limit velocity values before movement
@@ -571,7 +538,6 @@ void player::generalPlayerMovementControl(int frameTime){
     }else if(velocityX < (velocityXLimit * -1)){
         velocityX = velocityXLimit * -1;
     }
-
 
     // dash lag timer
     if(inDashLag){
@@ -591,23 +557,45 @@ void player::generalPlayerMovementControl(int frameTime){
         }
     }
 
-
 }
 
+void player::groundPlayer(int groundYLevel){
+    grounded = true;
+    doubleJumpUsed = false;
+    // reset fast fall state
+    if(inFastFall){
+        inFastFall = false;
+        gravity = tempGravity;
+    }
+    // reset force of gravity
+    currentGravityForce = groundedGravityForce;
+    // reset velocity
+    velocityY = 0;
+    // set position alinged with ground
+    positionY = groundYLevel - hitboxHeight;
+}
 
-void player::enactPlayerMovement(int frameTime){
-    // apply velocity
-    positionX += velocityX;
-    positionY += velocityY;
-
+void player::enactPlayerMovement(){
+    // apply velocity, typecast to int to prevent unwanted truncating of position after change
+    // ex: 100 + 2.4 = 102, but 100 - 2.4 = 97, rounding down works against us with negative vel
+    positionX += static_cast<int>(velocityX);
+    positionY += static_cast<int>(velocityY);
 
     // lower limit for speed, prevents sliding at low speed
     if(grounded && abs(velocityX) < 1){
         velocityX = 0;
     }
 
-    // decay X-velocity exponentially
-    velocityX *= pow(velocityXDecay, abs(velocityX));
+    // decay X-velocity exponentially when not moving horizontally
+    if(!Keyboard.areAnyPressed({left,right})){
+        velocityX *= pow(velocityXDecay, abs(velocityX));
+    }else{
+        if(velocityX > runSpeedMax){
+            velocityX = runSpeedMax;
+        }else if(velocityX < (runSpeedMax * -1)){
+            velocityX = runSpeedMax * -1;
+    }
+    }
     
 
     // custom-bake conditions to fit the dimensions of the platform(s)
@@ -615,19 +603,21 @@ void player::enactPlayerMovement(int frameTime){
     if(positionY < 180 - hitboxHeight || (positionX <= 50 - hitboxLength || positionX >= 263)){
         // player is in the air
         grounded = false;
+        // increase force of gravity when in air
         if(currentGravityForce < maxGravityForce){
             currentGravityForce += gravity;
         }
+        // apply force of gravity
         velocityY += currentGravityForce;  
     }else if((positionY > 185) && (positionX >= 50 - hitboxLength && positionX <= 263)){
-        // player is against the sides of the ground
+        // player is against the sides of the stage
         if(positionX <= 50 + hitboxLength){  //left side
             positionX = 50 - hitboxLength;
             velocityX = 0;
         }else if(positionX >= 268 - hitboxLength){ // right side
             positionX = 263;
             velocityX = 0;
-        }else{
+        }else{  
             positionY = 180;
             velocityY = 0;
         }
@@ -636,38 +626,13 @@ void player::enactPlayerMovement(int frameTime){
     else{
         // player has landed on the ground
         // reset grounded state
-        grounded = true;
-        doubleJumpUsed = false;
-        // reset fast fall state
-        if(inFastFall){
-            inFastFall = false;
-            gravity = tempGravity;
-        }
-        // reset force of gravity
-        currentGravityForce = 0;
-        
-        // set position alinged with ground
-        positionY = 180 - hitboxHeight;
-        // reset velocity
-        velocityY = 0;
+        groundPlayer(180);
+
     }
-    if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 150)  && !Keyboard.isPressed(down)){
+    if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 152)  && !Keyboard.isPressed(down)){
         // Player has landed on the upper platform
-        grounded = true;
-        doubleJumpUsed = false;
-        if(inFastFall){
-            inFastFall = false;
-            gravity = tempGravity;
-        }
-        // reset force of gravity
-        currentGravityForce = 0;
-        
-        // set position alinged with ground
-        positionY = 140 - hitboxHeight;
-        // reset velocity
-        velocityY = 0;
+        groundPlayer(140);
     }
-    
     
     // update hitbox position to follow player position
     playerHitbox.updateHitbox(positionX, positionY);

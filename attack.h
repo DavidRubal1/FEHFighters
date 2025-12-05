@@ -1,41 +1,91 @@
 class attack {
 
     public:
-        attack(int attackType, int attackDirection, int posX, int posY);
+        attack(int attackType,int hitHeight, int hitLength);
         hitbox getHitbox();
-        void updateAttackPosition(int posX, int posY);
-        void updateAttackHitbox();
+        void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
+        void updateAttackHitbox(bool attackHitboxActive);
+        void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
+
+        int getAttackType();
+
+        int getDirection();
+        float getDamage();
+        float getKnockback();
+        float getAngle();
+
+        
+        bool isActive();
         
     private:
         // attack properties
-        int attackType;  // 0 = punch, 1 = kick, etc.
+        int attackType;  // 0 = punch, 1 = kick, 2 = projectile.
         int direction;   // -1 = left, 1 = right
         int positionX;
         int positionY;
+
+        float damage;
+        float knockback;
+        float angle;
+
+        float velocityX;
+        float velocityY;
         
         // hitbox dimensions
         int hitboxHeight;
         int hitboxLength;
         
         // attack state
-        bool active;
+        bool active = false;
         
         // hitbox for attack
         hitbox attackHitbox;
+        // work on this to improve the accuracy of attack hitboxes in motion
+        hitbox attackTracing;
 };
 
 // Constructor
-attack::attack(int attackType, int attackDirection, int posX, int posY)
-    : attackHitbox(10, 10, posX, posY, true) {
+attack::attack(int attackType, int hitHeight, int hitLength)
+    : attackHitbox(hitHeight, hitLength), attackTracing(hitHeight, hitLength) {
     this->attackType = attackType;
-    this->direction = attackDirection;
-    this->positionX = posX;
-    this->positionY = posY;
-    this->hitboxHeight = 10;
-    this->hitboxLength = 10;
-    this->active = true;
+    this->hitboxHeight = hitHeight;
+    this->hitboxLength = hitLength;
+    switch(attackType){
+        case 0:
+        damage = 4.0;
+        knockback = 5.0;
+        angle = 1.0;
+        break;
+        case 1:
+        damage = 10.0;
+        knockback = 17.0;
+        angle = 0.5;
+        break;
+        case 2:
+        damage = 3.0;
+        knockback = 4.0;
+        angle = 1;
+        break;
+    }
 }
+
+int attack::getDirection(){
+    return direction;
+}
+
+float attack::getDamage(){
+    return damage;
+}
+
+float attack::getKnockback(){
+    return knockback;
+}
+
+float attack::getAngle(){
+    return angle;
+}
+
 
 // Get the attack's hitbox
 hitbox attack::getHitbox(){
@@ -43,14 +93,25 @@ hitbox attack::getHitbox(){
 }
 
 // Update the position of the attack
-void attack::updateAttackPosition(int posX, int posY){
+void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
+
     this->positionX = posX;
     this->positionY = posY;
-    updateAttackHitbox();
+    this->direction = dir;
+    updateAttackHitbox(attackHitboxActive);
+}
+
+
+void attack::updateActiveState(bool state){
+    active = state;
+}
+
+bool attack::isActive(){
+    return active;
 }
 
 // Update the hitbox based on attack type and direction
-void attack::updateAttackHitbox(){
+void attack::updateAttackHitbox(bool attackHitboxActive){
     if(attackType == 0){  // punch
         if(direction == -1){
             // punch extends to the left
@@ -59,6 +120,14 @@ void attack::updateAttackHitbox(){
             // punch extends to the right
             attackHitbox.updateHitbox(positionX + hitboxLength, positionY);
         }
+        if(attackHitboxActive){
+            if(active){
+                attackHitbox.debugDrawHitbox(RED);
+            }else{
+                attackHitbox.debugDrawHitbox(WHITE);
+            }
+        }
+         
     }
     // Add other attack types here as needed
 }
@@ -66,6 +135,8 @@ void attack::updateAttackHitbox(){
 // Check if this attack collides with another hitbox
 bool attack::checkCollision(hitbox otherHitbox){
     return attackHitbox.rectangleIntersects(otherHitbox);
+
 }
+
 
 
