@@ -6,6 +6,7 @@ class player{
         void enactPlayerMovement();
         void manageHitboxes(player *otherPlayer);
         void getHit(float force,  float damageAmount, float angleRadians, int attackDirection);
+        void groundPlayer(int groundYLevel);
         
         void playAnimations();
 
@@ -193,8 +194,7 @@ void player::setXYVelocity(float x, float y){
 void player::getHit(float force, float damageAmount, float angleRadians, int attackDirection){
     float forceX, forceY;
     // scale force based on current damage
-    // TODO: divide the power by a value that makes sense later
-    // TOFIX: ATTACKS HIT MULTIPLE TIMES
+    // TODO: scale the power by a value that makes sense later
     force = (((0.1 * (damage / 100)))* 50) + force;
 
     // calculate the direction of knockback into x and y components
@@ -219,17 +219,7 @@ void player::updateTimers(){
 
 
 void player::playAnimations(){
-    // determine animation
-    // if(!grounded){
-    //     dashTimer.setActiveState(false);
-    // }
-    // if(!grounded || !Keyboard.isPressed(down) || Keyboard.areAnyPressed({left, right})){ // uncrouch when not holding down
-    //     inCrouch = false;
-    // }
-
-    // determine current frame's animation
-
-
+    // determine the current animation to play and play it
     if(!inAttackAnimation){
         if(lagFrame == 0){
             if(grounded){
@@ -251,15 +241,12 @@ void player::playAnimations(){
         }
     }
 
-
+    // play double jump animation
     if(doubleJumpUsed){
         doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
     }else{
         doubleJumpAnimator.resetTimer();
     }
-
-    // TODO: clear dash animation when used, cancel when jump?
-    // MAKE SURE TO UPDATE THE ATTACK POSITION updateAttackPosition
     
     //attack animation 
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
@@ -294,7 +281,6 @@ void player::playAnimations(){
         //         }
         //     }
         // }
-        
 
 
         // Calculate total animation duration by summing all frame timings
@@ -335,23 +321,7 @@ void player::playAnimations(){
         }
         offsetPositionY = positionY;
         playerAnimator.playAnimation(currentAttackAnimation.fileName, offsetPositionX, offsetPositionY, direction, currentAttackAnimation.finalFrameNum, currentAttackAnimation.frameLength, currentAttackAnimation.looping, currentAttackAnimation.ID); 
-        // //gets proper animation frame
-        // strcat(filePath, std::to_string(attackFrame).c_str()); 
-        // strcat(filePath, ".png");
-        // FEHImage punchImg;
-        // punchImg.Open(filePath);
-        // if(direction == -1)
-        // {
-        // punchImg.Draw(positionX-11, positionY);
-        // }
-        // else
-        // {
-        // punchImg.Draw(positionX, positionY);
-
-        
-        
     
-        
         // Update attack animation timer
         attackAnimationTimer++;
         if(attackAnimationTimer >= totalDuration){
@@ -392,9 +362,8 @@ animationType player::getCurrentAttackAnimation(){
     }
 }
 
-
-
 void player::manageHitboxes(player *otherPlayer){
+    // manage projectiles differently that other attacks
     if(currentAttackType != -1){
         attack* currentAttack = getCurrentAttack();
         (*currentAttack).updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
@@ -403,28 +372,6 @@ void player::manageHitboxes(player *otherPlayer){
             checkAttackHits(otherPlayer, currentAttack);
         }
     }
-
-    // switch(currentAttackType){
-    //     case 0:
-    //     punch.updateAttackPosition(positionX, positionY, direction);
-    //     if(punch.isActive() && attackHitboxActive){
-    //         checkAttackHits(otherPlayer, &punch);
-    //     }
-        
-    //     break;
-    //     case 1:
-    //     kickAttack.updateAttackPosition(positionX, positionY, direction);
-    //     if(kickAttack.isActive() && attackHitboxActive){
-    //         checkAttackHits(otherPlayer, &kickAttack);
-    //     }
-    //     break;
-    //     case 2:
-    //     if(projectile.isActive() && attackHitboxActive){
-    //         checkAttackHits(otherPlayer, &projectile);
-    //     }
-    //     //projectiles will move on their own
-    //     break;
-    // }
     
 }
 
@@ -439,11 +386,11 @@ void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
 
 }
 
-
+// TODO: rework this to make it less instant
 void player::resetIfOffscreen(){
     // if player position is off-screen
     if(positionX < 0 || positionX > 319 || positionY > 239 || positionY < 0){
-        // resets position
+        // resets position, velocity, and damage
         positionX = startingPosX;
         positionY = startingPosY;
         velocityX = 0;
@@ -458,6 +405,7 @@ void player::dash(int direction){
     velocityXDecay = velocityXDecayDash;
 }
 
+/*coded by Charlie Limbert*/
 void player::action(){
     // Decrease lag frame counter
     if(lagFrame > 0){
@@ -489,18 +437,13 @@ void player::action(){
         attackFrame = 0;  // start at frame 0
         lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
 
-        
-
-        
     }
 }
 
 
 
 void player::generalPlayerMovementControl(){
-    if(playerColor == BLUE){
-        printf("VelX = %f", velocityX);
-    }
+    // grounded movement
     if(grounded){
         if(lagFrame <= 0 && !inAttackAnimation){
             if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
@@ -509,29 +452,24 @@ void player::generalPlayerMovementControl(){
                     if(Keyboard.isPressed(left)){
                         direction = -1;
                         if(velocityX >= 0){
-                        // dash if turning around or stationary
-                            
+                            // dash if turning around or stationary
                             dash(direction);
-                            
                         }else{
                             velocityX -= accelerationX;
                         }
-                        // normal acceleration
-                        
                     }
                     // move right
                     if(Keyboard.isPressed(right)){
                         direction = 1;
                         if(velocityX <= 0){
-                            
                             dash(direction);
-                            
                         }else{
                             velocityX += accelerationX;
                         }
                         
                     }
                 }else{
+                    //turn around mid-dash
                     if(Keyboard.isPressed(right)){
                         direction = 1;
                     }else if(Keyboard.isPressed(left)){
@@ -560,29 +498,29 @@ void player::generalPlayerMovementControl(){
                 velocityX += accelerationX * airspeedMod;
             }
         }
-        // fast fall
+        // fast fall when down is pressed
         if(Keyboard.isPressed(down) && !inJumpLag){
             // increase gravity for fast fall
             gravity = fastFallGravity;
             // set fast fall state to true
             inFastFall = true;
         }
-        // use double jump
+        // use double jump when jumping in air
         if(lagFrame <= 0 && !inAttackAnimation){
-        if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
-            inFastFall = false;
-            gravity = tempGravity;
-            doubleJumpUsed = true;
-            currentGravityForce = 0;
-            velocityY =- (jumpForce-1);
-            doubleJumpX = positionX - 3;
-            doubleJumpY = positionY + hitboxHeight - 1;
+            if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
+                inFastFall = false;
+                gravity = tempGravity;
+                doubleJumpUsed = true;
+                currentGravityForce = 0;
+                velocityY =- (jumpForce-1);
+                doubleJumpX = positionX - 3;
+                doubleJumpY = positionY + hitboxHeight - 1;
 
-        }
+            }
         }
     }
 
-    // other
+    // other functionality, TODO: move these to a separate function or something
 
     // currently unused
     // limit velocity values before movement
@@ -591,7 +529,6 @@ void player::generalPlayerMovementControl(){
     }else if(velocityX < (velocityXLimit * -1)){
         velocityX = velocityXLimit * -1;
     }
-
 
     // dash lag timer
     if(inDashLag){
@@ -611,22 +548,36 @@ void player::generalPlayerMovementControl(){
         }
     }
 
-
 }
 
+void player::groundPlayer(int groundYLevel){
+    grounded = true;
+    doubleJumpUsed = false;
+    // reset fast fall state
+    if(inFastFall){
+        inFastFall = false;
+        gravity = tempGravity;
+    }
+    // reset force of gravity
+    currentGravityForce = groundedGravityForce;
+    // reset velocity
+    velocityY = 0;
+    // set position alinged with ground
+    positionY = groundYLevel - hitboxHeight;
+}
 
 void player::enactPlayerMovement(){
     // apply velocity, typecast to int to prevent unwanted truncating of position after change
+    // ex: 100 + 2.4 = 102, but 100 - 2.4 = 97, rounding down works against us with negative vel
     positionX += static_cast<int>(velocityX);
     positionY += static_cast<int>(velocityY);
-
 
     // lower limit for speed, prevents sliding at low speed
     if(grounded && abs(velocityX) < 1){
         velocityX = 0;
     }
 
-    // decay X-velocity exponentially
+    // decay X-velocity exponentially when not moving horizontally
     if(!Keyboard.areAnyPressed({left,right})){
         velocityX *= pow(velocityXDecay, abs(velocityX));
     }else{
@@ -637,26 +588,27 @@ void player::enactPlayerMovement(){
     }
     }
     
-    
 
     // custom-bake conditions to fit the dimensions of the platform(s)
     // apply gravity (decay y-velocity) and handle grounded state
     if(positionY < 180 - hitboxHeight || (positionX <= 50 - hitboxLength || positionX >= 263)){
         // player is in the air
         grounded = false;
+        // increase force of gravity when in air
         if(currentGravityForce < maxGravityForce){
             currentGravityForce += gravity;
         }
+        // apply force of gravity
         velocityY += currentGravityForce;  
     }else if((positionY > 185) && (positionX >= 50 - hitboxLength && positionX <= 263)){
-        // player is against the sides of the ground
+        // player is against the sides of the stage
         if(positionX <= 50 + hitboxLength){  //left side
             positionX = 50 - hitboxLength;
             velocityX = 0;
         }else if(positionX >= 268 - hitboxLength){ // right side
             positionX = 263;
             velocityX = 0;
-        }else{
+        }else{  
             positionY = 180;
             velocityY = 0;
         }
@@ -665,38 +617,13 @@ void player::enactPlayerMovement(){
     else{
         // player has landed on the ground
         // reset grounded state
-        grounded = true;
-        doubleJumpUsed = false;
-        // reset fast fall state
-        if(inFastFall){
-            inFastFall = false;
-            gravity = tempGravity;
-        }
-        // reset force of gravity
-        currentGravityForce = groundedGravityForce;
-        
-        // set position alinged with ground
-        positionY = 180 - hitboxHeight;
-        // reset velocity
-        velocityY = 0;
+        groundPlayer(180);
+
     }
     if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 152)  && !Keyboard.isPressed(down)){
         // Player has landed on the upper platform
-        grounded = true;
-        doubleJumpUsed = false;
-        if(inFastFall){
-            inFastFall = false;
-            gravity = tempGravity;
-        }
-        // reset force of gravity
-        currentGravityForce = groundedGravityForce;
-        
-        // set position alinged with ground
-        positionY = 140 - hitboxHeight;
-        // reset velocity
-        velocityY = 0;
+        groundPlayer(140);
     }
-    
     
     // update hitbox position to follow player position
     playerHitbox.updateHitbox(positionX, positionY);
