@@ -5,7 +5,7 @@ class attack {
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir);
         void updateAttackHitbox();
-        void updateHitboxState(bool state);
+        void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
 
         int getAttackType();
@@ -17,7 +17,6 @@ class attack {
 
         
         bool isActive();
-        void deactivate();
         
     private:
         // attack properties
@@ -53,17 +52,17 @@ attack::attack(int attackType, int hitHeight, int hitLength)
     switch(attackType){
         case 0:
         damage = 6.0;
-        knockback = 3.0;
-        angle = 1.57;
+        knockback = 6.0;
+        angle = 1.3;
         break;
         case 1:
         damage = 10.0;
-        knockback = 6.0;
+        knockback = 17.0;
         angle = 0.5;
         break;
         case 2:
         damage = 3.0;
-        knockback = 1.0;
+        knockback = 4.0;
         angle = 1;
         break;
     }
@@ -101,7 +100,7 @@ void attack::updateAttackPosition(int posX, int posY, int dir){
 }
 
 
-void attack::updateHitboxState(bool state){
+void attack::updateActiveState(bool state){
     active = state;
 }
 

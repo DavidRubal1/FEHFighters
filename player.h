@@ -13,7 +13,7 @@ class player{
 
         void resetIfOffscreen();
 
-        void checkAttackHits(player *otherPlayer);
+        void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void action();
 
 
@@ -46,7 +46,9 @@ class player{
 
         // general player speed
         float velocityX = 0, velocityY = 0;
+        int knockbackVelX, knockbackVelY;
         int direction = 1;
+
         // unused maybe use this to limit speed? knockback will make this hard
         float velocityXLimit = 20, velocityYLimit = 20;
 
@@ -75,7 +77,6 @@ class player{
         animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
         animationType punchAnimation;
         
-
         animation doubleJumpAnimator;
         animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
 
@@ -150,7 +151,6 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     strcpy(punchAnimation.fileName, "/Punch/");
     punchAnimation.ID = 3;
     punchAnimation.looping = false;
-
 }
 
 hitbox player::getHitbox(){
@@ -176,15 +176,17 @@ void player::getHit(float force, float damageAmount, float angleRadians, int att
     // scale force based on current damage
     // TODO: divide the power by a value that makes sense later
     // TOFIX: ATTACKS HIT MULTIPLE TIMES
-    force = (((0.1 * (damage / 100) + 0.05 * (damage / 100) * damageAmount))* 200) + force;
+    force = (((0.1 * (damage / 100)))* 75) + force;
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
     forceX = direction * force*cos(angleRadians);
     forceY = direction * force*sin(angleRadians);
     // apply force to player velocity
-    velocityX += forceX;
-    velocityY -= forceY;
+
+    velocityX = forceX;
+    velocityY = -1 * forceY;
+    currentGravityForce = 0;
     damage += damageAmount;
 }
 
@@ -341,48 +343,38 @@ void player::playAnimations(){
 
 
 void player::manageHitboxes(player *otherPlayer){
-    if(attackHitboxActive){
-        switch(currentAttackType){
-            case 0:
-            punch.updateHitboxState(true);
-            punch.updateAttackPosition(positionX, positionY, direction);
-            break;
-            case 1:
-            kickAttack.updateHitboxState(true);
-            kickAttack.updateAttackPosition(positionX, positionY, direction);
-            break;
-            case 2:
-            projectile.updateHitboxState(true);
-            //projectiles will move on their own
-            break;
+    
+    switch(currentAttackType){
+        case 0:
+        punch.updateAttackPosition(positionX, positionY, direction);
+        if(punch.isActive() && attackHitboxActive){
+            checkAttackHits(otherPlayer, &punch);
         }
-        checkAttackHits(otherPlayer);
-    }else{
-        switch(currentAttackType){
-            case 0:
-            punch.updateHitboxState(false);
-            break;
-            case 1:
-            kickAttack.updateHitboxState(false);
-            break;
-            case 2:
-            projectile.updateHitboxState(false);
-            //projectiles will move on their own
-            break;
+        
+        break;
+        case 1:
+        kickAttack.updateAttackPosition(positionX, positionY, direction);
+        if(kickAttack.isActive() && attackHitboxActive){
+            checkAttackHits(otherPlayer, &kickAttack);
         }
+        break;
+        case 2:
+        if(projectile.isActive() && attackHitboxActive){
+            checkAttackHits(otherPlayer, &projectile);
+        }
+        //projectiles will move on their own
+        break;
     }
+    
 }
 
-void player::checkAttackHits(player *otherPlayer){
-        if(punch.checkCollision((*otherPlayer).getHitbox())){
-            (*otherPlayer).getHit(punch.getKnockback(), punch.getDamage(), punch.getAngle(), punch.getDirection());
+void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
+        if((*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
+            (*otherPlayer).getHit((*activeAttack).getKnockback(), (*activeAttack).getDamage(), (*activeAttack).getAngle(), (*activeAttack).getDirection());
+            // disable attack to prevent attack from hitting multiple times in consecutive frames
+            (*activeAttack).updateActiveState(false);
         }
-        if(kickAttack.checkCollision((*otherPlayer).getHitbox())){
-            (*otherPlayer).getHit(kickAttack.getKnockback(), kickAttack.getDamage(), kickAttack.getAngle(), kickAttack.getDirection());
-        }
-        if(projectile.checkCollision((*otherPlayer).getHitbox())){
-            (*otherPlayer).getHit(projectile.getKnockback(), projectile.getDamage(), projectile.getAngle(), projectile.getDirection());
-        }
+
 }
 
 
@@ -422,11 +414,13 @@ void player::action(){
         if (Keyboard.isPressed(basic)) 
         {
             currentAttackType = 0;// punch
+            punch.updateActiveState(true);
 
         }
         else if (Keyboard.isPressed(kick))
         {
             currentAttackType = 1;// kick
+            kickAttack.updateActiveState(true);
         }
         inAttackAnimation = true;  // start an attack animation  
         attackAnimationTimer = 0;  // reset timer to beginning of animation
