@@ -31,10 +31,10 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
     if(currentAnimationID != ID){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(finalFrameNum);
+        holdTime.resetTimer();
         currentAnimationID = ID;
     }
     animationTimer.updateTimerState();
-    
     if(looping && !animationTimer.isActive()){
         animationTimer.resetTimer();
     }
@@ -72,6 +72,7 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int final
     if(currentAnimationID != ID){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(finalFrameNum);
+        holdTime.resetTimer();
         currentAnimationID = ID;
     }
     animationTimer.updateTimerState();
@@ -87,7 +88,7 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int final
         FEHImage drawAnimation;
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-                if(holdTime.getCurrentTimerTime() < frameLength - 1){
+        if(holdTime.getCurrentTimerTime() < frameLength - 1){
             holdTime.incrementTimer();
         }else{
             animationTimer.incrementTimer();

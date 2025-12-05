@@ -17,7 +17,7 @@ class player{
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void action();
         attack* getCurrentAttack();
-        animationType getCurrentAttackAnimation();
+        animationType* getCurrentAttackAnimation();
 
 
         std::vector<int> getXYPosition();
@@ -117,7 +117,6 @@ class player{
         bool inAttackAnimation = false;  // is any attack currently animating
         int currentAttackType = -1;  //(-1 = none, 0 = punch, 1 = kick, etc.)
         int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
-        int attackFrame = 0;  // current frame (0-4) being displayed
         bool AttackPressedLastFrame = false;  //track previous frame's button state
         
        
@@ -130,7 +129,7 @@ class player{
         {
             {1, 1, 3, 2, 2},
             {2, 2, 3, 3, 2},
-            {4, 6, 6, 3, 3}
+            {4, 4, 6, 3, 3}
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
@@ -172,7 +171,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
 
     strcpy(projectileAnimation.fileName, "/Projectile/");
     projectileAnimation.ID = 5;
-    projectileAnimation.looping = true;
+    projectileAnimation.looping = false;
     // maybe add a separate variable to indicate that this should be separated from the player.
 }
 
@@ -293,14 +292,13 @@ void player::playAnimations(){
             totalDuration += FrameTiming[currentAttackType][i];
         }
         // change this to work with other attacks as well
-        animationType currentAttackAnimation = getCurrentAttackAnimation();
-        currentAttackAnimation.finalFrameNum = totalDuration;
+        animationType* currentAttackAnimation = getCurrentAttackAnimation();
+        (*currentAttackAnimation).finalFrameNum = totalDuration;
 
         
         
         // Determine current frame based on timer
         int elapsedTime = 0;
-        attackFrame = 0;
         attackHitboxActive = false;
         
         //
@@ -309,8 +307,7 @@ void player::playAnimations(){
             //determines what frame the attack animation is on
             if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
             {
-                attackFrame = i;
-                currentAttackAnimation.frameLength = FrameTiming[currentAttackType][i];
+                (*currentAttackAnimation).frameLength = FrameTiming[currentAttackType][i];
                 attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
                 break;
             }
@@ -323,7 +320,7 @@ void player::playAnimations(){
             offsetPositionX = positionX;
         }
         offsetPositionY = positionY;
-        playerAnimator.playAnimation(currentAttackAnimation.fileName, offsetPositionX, offsetPositionY, direction, currentAttackAnimation.finalFrameNum, currentAttackAnimation.frameLength, currentAttackAnimation.looping, currentAttackAnimation.ID); 
+        playerAnimator.playAnimation((*currentAttackAnimation).fileName, offsetPositionX, offsetPositionY, direction, (*currentAttackAnimation).finalFrameNum, (*currentAttackAnimation).frameLength, (*currentAttackAnimation).looping, (*currentAttackAnimation).ID); 
     
         // Update attack animation timer
         attackAnimationTimer++;
@@ -351,16 +348,16 @@ attack* player::getCurrentAttack(){
     }
 }
 
-animationType player::getCurrentAttackAnimation(){
+animationType* player::getCurrentAttackAnimation(){
     switch(currentAttackType){
         case 0: 
-        return punchAnimation;
+        return &punchAnimation;
         break;
         case 1: 
-        return kickAnimation;
+        return &kickAnimation;
         break;
         case 2:
-        return projectileAnimation;
+        return &projectileAnimation;
         break;
     }
 }
@@ -443,7 +440,6 @@ void player::action(){
         }
         inAttackAnimation = true;  //indicates attack animation is being played 
         attackAnimationTimer = 0;  // reset timer to beginning of animation
-        attackFrame = 0;  // start at frame 0
         lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
 
     }
@@ -587,7 +583,7 @@ void player::enactPlayerMovement(){
     }
 
     // decay X-velocity exponentially when not moving horizontally
-    if(!Keyboard.areAnyPressed({left,right})){
+    if(!Keyboard.areAnyPressed({left,right})|| inAttackAnimation){
         velocityX *= pow(velocityXDecay, abs(velocityX));
     }else{
         if(velocityX > runSpeedMax){
