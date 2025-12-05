@@ -176,7 +176,6 @@ int main()
         Player1.action();
         //Player1.updateTimers();
         Player1.manageHitboxes(&Player2);
-        printf("P2 Y-VEL: %f", Player2.getXYVelocity()[1]);
         
         Player1.playAnimations();
         int debugColor;
