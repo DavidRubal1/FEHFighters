@@ -18,7 +18,7 @@
 
 int main()
 {
-    int frameTimeMilliseconds = 19; // time between frames
+    int frameTimeMilliseconds = 10; // time between frames
     int numGames = 0, redWins = 0, blueWins = 0;
     // program loop
     while(1){
@@ -126,8 +126,8 @@ int main()
     }
     
 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, 160, 160, RED);
-    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_M, KEY_N, 230, 160, BLUE);
+    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, KEY_Y, 160, 160, RED);
+    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 230, 160, BLUE);
 
     
     FEHIcon::Icon backButton;
@@ -179,7 +179,7 @@ int main()
         Player1.enactPlayerMovement(frameTimeMilliseconds);
         Player1.action(frameTimeMilliseconds);
         Player1.playAnimations(frameTimeMilliseconds);
-        Player1.getHitbox().debugDrawHitbox(RED); // debug
+        //Player1.getHitbox().debugDrawHitbox(RED); // debug
         Player1.resetIfOffscreen();
         Player2.generalPlayerMovementControl(frameTimeMilliseconds);
         Player2.enactPlayerMovement(frameTimeMilliseconds);

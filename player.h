@@ -1,6 +1,6 @@
 class player{
     public:
-        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, int startingX, int startingY,  int color);
+        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
         void generalPlayerMovementControl(int frameTime);
         void dash(int direction);
         void enactPlayerMovement(int frameTime);
@@ -39,6 +39,8 @@ class player{
         // hitbox for player
         hitbox playerHitbox;
 
+        //attack hitboxes
+        
         // general player speed
         float velocityX = 0, velocityY = 0;
         int direction = 1;
@@ -95,7 +97,7 @@ class player{
         float maxGravityForce = 1.5;
 
         // controls
-        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R;
+        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
         float damage = 0;
         
         // attack animation variables
@@ -107,27 +109,29 @@ class player{
         
        
         // Number of images/frames for each attack type
-        int attackFrameCount[2] = {5, 5};  // punch has 5 frames, kick has 5 frames
+        int attackFrameCount[3] = {5, 5, 5};  // punch has 5 frames, kick has 5 frames
         
         // Frame timing arrays for each attack (in milliseconds per frame)
         // punch: frames 0-4 timing
-        int FrameTiming[2][5] = 
+        int FrameTiming[3][5] = 
         {
             {15, 15, 40, 40, 20},
-            {20, 20, 50, 50, 30}
+            {20, 20, 50, 50, 30},
+            {40, 60, 60, 30, 30}
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
-        bool FrameHasHitbox[2][5] = {
+        bool FrameHasHitbox[3][5] = {
             {false, false, false, true, false},  //punch active frames
-            {false, false, false, true, false}  //kick active frames
+            {false, false, false, true, false}, //kick active frames
+            {false, false, false, true, false}  //fireball active frames
         };  
         
         bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
 };
 
 // constructor
-player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, int startingX, int startingY, int color) 
+player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY, true){
     left = leftwards;
     right = rightwards;
@@ -139,6 +143,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     positionY = startingY;
     basic = basicAttack;
     kick = kickAttack;
+    projectile = projectileAttack;
     playerColor = color;
 }
 
@@ -178,75 +183,75 @@ void player::getHit(float force, float damageAmount, int angleRadians, int attac
 }
 
 
-    void player::dashAnimation(int frameTime){
-        char filePath[64];
-        if(playerColor == RED){
-            if(direction == -1){
-                strcpy(filePath, "./PlayerRed/DashLeft/RedDashLeft");
-            }else{
-                strcpy(filePath, "./PlayerRed/DashRight/RedDashRight");
-            }
+void player::dashAnimation(int frameTime){
+    char filePath[64];
+    if(playerColor == RED){
+        if(direction == -1){
+            strcpy(filePath, "./PlayerRed/DashLeft/RedDashLeft");
         }else{
-            if(direction == -1){
-                strcpy(filePath, "./PlayerBlue/DashLeft/BlueDashLeft");
-            }else{
-                strcpy(filePath, "./PlayerBlue/DashRight/BlueDashRight");
-            }
+            strcpy(filePath, "./PlayerRed/DashRight/RedDashRight");
         }
-        inDashAnimation = true;
-        FEHImage drawDash;
-        strcat(filePath, std::to_string(dashAnimationTimer).c_str());
-        strcat(filePath, ".png");
-        drawDash.Open(filePath);
-        drawDash.Draw(positionX, positionY);
-        
-    }
-    void player::crouchAnimation(int frameTime){
-        char filePath[64];
-        inDashAnimation = false;
-        if(playerColor == RED){
-            if(direction == -1){
-                strcpy(filePath, "./PlayerRed/CrouchLeft/RedCrouchLeft");
-            }else{
-                strcpy(filePath, "./PlayerRed/CrouchRight/RedCrouchRight");
-            }
+    }else{
+        if(direction == -1){
+            strcpy(filePath, "./PlayerBlue/DashLeft/BlueDashLeft");
         }else{
-            if(direction == -1){
-                strcpy(filePath, "./PlayerBlue/CrouchLeft/BlueCrouchLeft");
-            }else{
-                strcpy(filePath, "./PlayerBlue/CrouchRight/BlueCrouchRight");
-            }
+            strcpy(filePath, "./PlayerBlue/DashRight/BlueDashRight");
         }
-        inCrouch = true;
-        FEHImage drawDash;
-        strcat(filePath, ".png");
-        drawDash.Open(filePath);
-        drawDash.Draw(positionX, positionY);
     }
+    inDashAnimation = true;
+    FEHImage drawDash;
+    strcat(filePath, std::to_string(dashAnimationTimer).c_str());
+    strcat(filePath, ".png");
+    drawDash.Open(filePath);
+    drawDash.Draw(positionX, positionY);
     
-    void player::idleAnimation(int frameTime){
-            inIdle = true;
-            char filePath[64];
-            //play idle animation
-            FEHImage idle;
-            if(playerColor == RED){
-                if(direction == -1){
-                    strcpy(filePath, "./PlayerRed/Left/PlayerRedLeft");
-                }else{
-                    strcpy(filePath, "./PlayerRed/Right/PlayerRedRight");
-                }
-            }else{
-                if(direction == -1){
-                    strcpy(filePath, "./PlayerBlue/Left/PlayerBlueLeft");
-                }else{
-                    strcpy(filePath, "./PlayerBlue/Right/PlayerBlueRight");
-                }
-            }
-            strcat(filePath, std::to_string(idleTimer/30).c_str());
-            strcat(filePath, ".png");
-            idle.Open(filePath);
-            idle.Draw(positionX, positionY);
+}
+void player::crouchAnimation(int frameTime){
+    char filePath[64];
+    inDashAnimation = false;
+    if(playerColor == RED){
+        if(direction == -1){
+            strcpy(filePath, "./PlayerRed/CrouchLeft/RedCrouchLeft");
+        }else{
+            strcpy(filePath, "./PlayerRed/CrouchRight/RedCrouchRight");
+        }
+    }else{
+        if(direction == -1){
+            strcpy(filePath, "./PlayerBlue/CrouchLeft/BlueCrouchLeft");
+        }else{
+            strcpy(filePath, "./PlayerBlue/CrouchRight/BlueCrouchRight");
+        }
     }
+    inCrouch = true;
+    FEHImage drawDash;
+    strcat(filePath, ".png");
+    drawDash.Open(filePath);
+    drawDash.Draw(positionX, positionY);
+}
+
+void player::idleAnimation(int frameTime){
+        inIdle = true;
+        char filePath[64];
+        //play idle animation
+        FEHImage idle;
+        if(playerColor == RED){
+            if(direction == -1){
+                strcpy(filePath, "./PlayerRed/Left/PlayerRedLeft");
+            }else{
+                strcpy(filePath, "./PlayerRed/Right/PlayerRedRight");
+            }
+        }else{
+            if(direction == -1){
+                strcpy(filePath, "./PlayerBlue/Left/PlayerBlueLeft");
+            }else{
+                strcpy(filePath, "./PlayerBlue/Right/PlayerBlueRight");
+            }
+        }
+        strcat(filePath, std::to_string(idleTimer/30).c_str());
+        strcat(filePath, ".png");
+        idle.Open(filePath);
+        idle.Draw(positionX, positionY);
+}
 
 void player::doubleJumpAnimation(int frameTime){
     char filePath[64];
@@ -268,11 +273,11 @@ void player::playAnimations(int frameTime){
             inCrouch = false;
     }
 
-    if(grounded && (Keyboard.areAnyPressed({left, right}) || inDashAnimation)){  //dash right
+    if((grounded && (Keyboard.areAnyPressed({left, right}) || inDashAnimation))&&!inAttackAnimation){  //dash right
         dashAnimation(frameTime);
-    }else if(grounded && Keyboard.isPressed(down) && !Keyboard.areAnyPressed({left, right})){
+    }else if((grounded && Keyboard.isPressed(down) && !Keyboard.areAnyPressed({left, right}))&&!inAttackAnimation){
         crouchAnimation(frameTime);
-    }else{
+    }else if (!inAttackAnimation){
         idleAnimation(frameTime);
     }
 
@@ -293,27 +298,39 @@ void player::playAnimations(int frameTime){
         {
             if(direction == -1)
             {
-                // Punch left or other left attacks
-                if(currentAttackType == 0){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
+                // Punch left
+                if(currentAttackType == 0)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/"); //sets the file path to the folder containing the left punch frames
                 }
-                // Add more attack types here:
-                else if(currentAttackType == 1){
-                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
+                //kick left
+                else if(currentAttackType == 1)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/"); //sets the file path to the folder containing the left kick frames
+                }
+                //projectile left
+                else if(currentAttackType == 2)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedLeftProjectile/"); //sets the file path to the folder containing the left fireball frames
                 }
             }
             else
             {
-                //right attacks
+                //right punch
                 if(currentAttackType == 0)
                 {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/"); //sets file path to right punch frames
                 }
-                // Add more attack types here:
+                //right kick
                 else if(currentAttackType == 1)
                 {
-                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightKick/"); //sets file path to right kick frames
                 }
+                //right projectile
+                else if (currentAttackType == 2)
+                {
+                    strcpy(filePath, "./PlayerRed/PlayerRedRightProjectile/"); //sets file path to right projectile frames
+                } 
             }
         }
         
@@ -348,21 +365,22 @@ void player::playAnimations(int frameTime){
         punchImg.Open(filePath);
         if(direction == -1)
         {
-        punchImg.Draw(positionX-11, positionY);
+            punchImg.Draw(positionX-11, positionY);
         }
         else
         {
-        punchImg.Draw(positionX, positionY);
+            punchImg.Draw(positionX, positionY);
     }
         
         // Update attack animation timer
         attackAnimationTimer += frameTime;
-        if(attackAnimationTimer >= totalDuration){
+        if(attackAnimationTimer >= totalDuration)
+        {
             inAttackAnimation = false;
             currentAttackType = -1;
             attackAnimationTimer = 0;
             attackHitboxActive = false;
-            lagFrame = 20;  // lag after attack ends
+            lagFrame = 20;  //how many frames to lag after attack ends
         }
     }
     // idle animation
@@ -446,9 +464,10 @@ void player::action(int frameTime){
     }
     
     // Detect button press (transition from not pressed to pressed)
-    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick));
+    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile));
 
-    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held. Logic explained by Git Copilot.
+    //prevents holding of attacks.
+    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
     AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
     
     // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
@@ -456,14 +475,18 @@ void player::action(int frameTime){
     {
         if (Keyboard.isPressed(basic)) 
         {
-            currentAttackType = 0;// punch
+            currentAttackType = 0; //punch
 
         }
         else if (Keyboard.isPressed(kick))
         {
-            currentAttackType = 1;// kick
+            currentAttackType = 1; //kick
         }
-        inAttackAnimation = true;  // start an attack animation  
+        else if (Keyboard.isPressed(projectile))
+        {
+            currentAttackType = 2; //projectile
+        }
+        inAttackAnimation = true;  //indicates attack animation is being played 
         attackAnimationTimer = 0;  // reset timer to beginning of animation
         attackFrame = 0;  // start at frame 0
         lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)

@@ -6,10 +6,6 @@ class attack {
         void updateAttackPosition(int posX, int posY);
         void updateAttackHitbox();
         bool checkCollision(hitbox otherHitbox);
-        int getAttackType();
-        int getDirection();
-        bool isActive();
-        void deactivate();
         
     private:
         // attack properties
