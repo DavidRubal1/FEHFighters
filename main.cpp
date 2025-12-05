@@ -35,7 +35,7 @@ int main()
         red.Open("./PlayerRed/Right/Idle/Idle0.png");
         red.Draw(30, 90);
         FEHImage blue;
-        blue.Open("./PlayerBlue/Left/PlayerBlueLeft0.png");
+        blue.Open("./PlayerBlue/Left/Idle/Idle0.png");
         blue.Draw(276, 90);
         FEHIcon::Icon startButton;
         startButton.SetProperties("Play", 76, 60, 168, 30, WHITE, RED);
@@ -170,10 +170,10 @@ int main()
         // get an array of [XPOS, YPOS] for player 1
         //std::vector<int> XYPos_Player1 = Player1.getXYPosition();
         //std::vector<float> XYVel_Player1 = Player1.getXYVelocity();
-        Player1.action();
+        
         Player1.generalPlayerMovementControl();
         Player1.enactPlayerMovement();
-        
+        Player1.action();
         //Player1.updateTimers();
         Player1.manageHitboxes(&Player2);
         printf("P2 Y-VEL: %f", Player2.getXYVelocity()[1]);
@@ -197,6 +197,7 @@ int main()
         Player2.action();
         Player2.playAnimations();
         Player2.resetIfOffscreen();
+        Player2.getHitbox().debugDrawHitbox(WHITE);
 
         
         backButton.Draw();

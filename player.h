@@ -53,8 +53,9 @@ class player{
         float velocityXLimit = 20, velocityYLimit = 20;
 
         // grounded speed stuff
-        float accelerationX = 1.05;
-        float dashSpeedMod = 2.1;
+        float accelerationX = 1.1;
+        float dashSpeedMod = 2;
+        float runSpeedMax = 3;
         float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
         float velocityXDecayDash = 0.95;
         // grounded state
@@ -92,15 +93,17 @@ class player{
 
 
         // gravity
-        float fastFallGravity = 0.25;
+        float fastFallGravity = 0.20;
         bool inFastFall = false;
-        float gravity = 0.10, tempGravity = 0.10;
+        float gravity = 0.08, tempGravity = 0.08;
         float currentGravityForce = 0, groundedGravityForce = 0.3;
-        float maxGravityForce = 1.5;
+        float maxGravityForce = 1.2;
 
         // controls
         Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R;
         float damage = 0;
+        // TODO: WORK ON IMPLEMENTING HITSTUN
+        bool inHitstun = false;
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
@@ -117,7 +120,7 @@ class player{
         // punch: frames 0-4 timing
         int FrameTiming[2][5] = 
         {
-            {1, 1, 3, 3, 2},
+            {1, 1, 3, 2, 2},
             {2, 2, 3, 3, 2}
         };
         
@@ -133,7 +136,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 10, 10), kickAttack(1, 10, 10), projectile(2, 10, 10),
+    punch(0, 15, 10), kickAttack(1, 15, 10), projectile(2, 10, 10),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -176,17 +179,18 @@ void player::getHit(float force, float damageAmount, float angleRadians, int att
     // scale force based on current damage
     // TODO: divide the power by a value that makes sense later
     // TOFIX: ATTACKS HIT MULTIPLE TIMES
-    force = (((0.1 * (damage / 100)))* 75) + force;
+    force = (((0.1 * (damage / 100)))* 50) + force;
 
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
-    forceX = direction * force*cos(angleRadians);
-    forceY = direction * force*sin(angleRadians);
+    forceX = attackDirection * force*cos(angleRadians);
+    forceY = force*sin(angleRadians);
     // apply force to player velocity
 
     velocityX = forceX;
     velocityY = -1 * forceY;
     currentGravityForce = 0;
+    inHitstun = true;
     damage += damageAmount;
 }
 
@@ -213,10 +217,10 @@ void player::playAnimations(){
     if(!inAttackAnimation){
         if(lagFrame == 0){
             if(grounded){
-                if((Keyboard.areAnyPressed({left, right}) && (!Keyboard.isPressed({left, right})))){  //dash right
+                if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){  //dash right
                     // Dash animation
                     playerAnimator.playAnimation(dashAnimation.fileName, positionX, positionY, direction, dashAnimation.finalFrameNum, 1, dashAnimation.looping, dashAnimation.ID);
-                } else if(Keyboard.isPressed(down) && !Keyboard.areAnyPressed({left, right})){
+                } else if(Keyboard.isPressed(down)){
                     // Crouch animation
                     playerAnimator.playAnimation(crouchAnimation.fileName, positionX, positionY, direction, crouchAnimation.finalFrameNum, 1, crouchAnimation.looping, crouchAnimation.ID);
                 }else{
@@ -307,7 +311,7 @@ void player::playAnimations(){
         if(direction == -1){
             offsetPositionX = positionX-11;
         }else{
-            offsetPositionX = positionX+3;
+            offsetPositionX = positionX;
         }
         offsetPositionY = positionY;
         playerAnimator.playAnimation(punchAnimation.fileName, offsetPositionX, offsetPositionY, direction, punchAnimation.finalFrameNum, punchAnimation.frameLength, punchAnimation.looping, punchAnimation.ID); 
@@ -391,7 +395,7 @@ void player::resetIfOffscreen(){
 }
 
 void player::dash(int direction){
-    velocityX += direction * accelerationX * dashSpeedMod;
+    velocityX = direction * runSpeedMax * 0.9;
     inDashLag = true;
     velocityXDecay = velocityXDecayDash;
 }
@@ -440,38 +444,49 @@ void player::generalPlayerMovementControl(){
         printf("VelX = %f", velocityX);
     }
     if(grounded){
-        if(lagFrame <= 0 && !inAttackAnimation && !Keyboard.isPressed({left, right})){
-            if(!inDashLag){
-                // move left
-                if(Keyboard.isPressed(left)){
-                    direction = -1;
-                    // dash if turning around or stationary
-                    if(velocityX >= 0){
-                        dash(direction);
+        if(lagFrame <= 0 && !inAttackAnimation){
+            if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
+                if(!inDashLag){
+                    // move left
+                    if(Keyboard.isPressed(left)){
+                        direction = -1;
+                        if(velocityX >= 0){
+                        // dash if turning around or stationary
+                            
+                            dash(direction);
+                            
+                        }else{
+                            velocityX -= accelerationX;
+                        }
+                        // normal acceleration
+                        
                     }
-                    // normal acceleration
-                    velocityX -= accelerationX;
-                }
-                // move right
-                if(Keyboard.isPressed(right)){
-                    direction = 1;
-                    if(velocityX <= 0){
-                        dash(direction);
+                    // move right
+                    if(Keyboard.isPressed(right)){
+                        direction = 1;
+                        if(velocityX <= 0){
+                            
+                            dash(direction);
+                            
+                        }else{
+                            velocityX += accelerationX;
+                        }
+                        
                     }
-                    velocityX += accelerationX;
                 }
+                
             }
+            //jump when on ground
             if(Keyboard.isPressed(up)){
                 currentGravityForce = 0;
                 velocityY -= jumpForce;
                 inJumpLag = true;
             }
-            
+                
         }
-        // jump when grounded
-        
-    }
-    else{ 
+            
+            
+    }else{ 
         // airborne movement (grouded == false)
         if(!Keyboard.isPressed({left, right})){
             if(Keyboard.isPressed(left)){
@@ -548,7 +563,16 @@ void player::enactPlayerMovement(){
     }
 
     // decay X-velocity exponentially
-    velocityX *= pow(velocityXDecay, abs(velocityX));
+    if(!Keyboard.areAnyPressed({left,right})){
+        velocityX *= pow(velocityXDecay, abs(velocityX));
+    }else{
+        if(velocityX > runSpeedMax){
+            velocityX = runSpeedMax;
+        }else if(velocityX < (runSpeedMax * -1)){
+            velocityX = runSpeedMax * -1;
+    }
+    }
+    
     
 
     // custom-bake conditions to fit the dimensions of the platform(s)

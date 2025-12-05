@@ -51,9 +51,9 @@ attack::attack(int attackType, int hitHeight, int hitLength)
     this->hitboxLength = hitLength;
     switch(attackType){
         case 0:
-        damage = 6.0;
-        knockback = 6.0;
-        angle = 1.3;
+        damage = 4.0;
+        knockback = 5.0;
+        angle = 1.0;
         break;
         case 1:
         damage = 10.0;
