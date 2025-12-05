@@ -3,8 +3,8 @@ class attack {
     public:
         attack(int attackType,int hitHeight, int hitLength);
         hitbox getHitbox();
-        void updateAttackPosition(int posX, int posY, int dir);
-        void updateAttackHitbox();
+        void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
+        void updateAttackHitbox(bool attackHitboxActive);
         void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
 
@@ -41,11 +41,13 @@ class attack {
         
         // hitbox for attack
         hitbox attackHitbox;
+        // work on this to improve the accuracy of attack hitboxes in motion
+        hitbox attackTracing;
 };
 
 // Constructor
 attack::attack(int attackType, int hitHeight, int hitLength)
-    : attackHitbox(hitHeight, hitLength) {
+    : attackHitbox(hitHeight, hitLength), attackTracing(hitHeight, hitLength) {
     this->attackType = attackType;
     this->hitboxHeight = hitHeight;
     this->hitboxLength = hitLength;
@@ -91,12 +93,12 @@ hitbox attack::getHitbox(){
 }
 
 // Update the position of the attack
-void attack::updateAttackPosition(int posX, int posY, int dir){
+void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
 
     this->positionX = posX;
     this->positionY = posY;
     this->direction = dir;
-    updateAttackHitbox();
+    updateAttackHitbox(attackHitboxActive);
 }
 
 
@@ -109,17 +111,23 @@ bool attack::isActive(){
 }
 
 // Update the hitbox based on attack type and direction
-void attack::updateAttackHitbox(){
+void attack::updateAttackHitbox(bool attackHitboxActive){
     if(attackType == 0){  // punch
         if(direction == -1){
             // punch extends to the left
             attackHitbox.updateHitbox(positionX - hitboxLength, positionY);
-            attackHitbox.debugDrawHitbox(RED);
         } else {
             // punch extends to the right
             attackHitbox.updateHitbox(positionX + hitboxLength, positionY);
-            attackHitbox.debugDrawHitbox(WHITE);
         }
+        if(attackHitboxActive){
+            if(active){
+                attackHitbox.debugDrawHitbox(RED);
+            }else{
+                attackHitbox.debugDrawHitbox(WHITE);
+            }
+        }
+         
     }
     // Add other attack types here as needed
 }
