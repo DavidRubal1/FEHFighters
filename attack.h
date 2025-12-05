@@ -14,8 +14,9 @@ class attack {
         float getDamage();
         float getKnockback();
         float getAngle();
-        float getScaling();
+        float getKBScaling();
         int getHitstun();
+        float getHitstunScaling();
 
         
         bool isActive();
@@ -32,8 +33,9 @@ class attack {
         float damage;
         float knockback;
         float angle;
-        float scaling;
+        float KBscaling;
         int hitstunFramesBase;
+        float hitstunScaling;
 
         float velocityX;
         float velocityY;
@@ -59,26 +61,29 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
     this->offX = offsetX;
     this->offY = offsetY;
     switch(attackType){
-        case 0:
+        case 0: // punch
         damage = 4.0;
         knockback = 5.0;
         angle = 1.0;
-        scaling = 1.0;
-        hitstunFramesBase = 7;
+        KBscaling = 1.0;
+        hitstunFramesBase = 3;
+        hitstunScaling = 0.1;
         break;
-        case 1:
+        case 1: // kick
         damage = 10.0;
-        knockback = 5.0;
+        knockback = 2.0;
         angle = 0.5;
-        scaling = 1.5;
-        hitstunFramesBase = 15;
-        break;
+        KBscaling = 1.5;
+        hitstunFramesBase = 2;
+        hitstunScaling = 0.3;
+        break; // projectile
         case 2:
         damage = 3.0;
         knockback = 4.0;
         angle = 1;
-        scaling = 1.5;
+        KBscaling = 1.5;
         hitstunFramesBase = 5;
+        hitstunScaling = 0.05;
         break;
     }
 }
@@ -98,12 +103,16 @@ float attack::getKnockback(){
 float attack::getAngle(){
     return angle;
 }
-float attack::getScaling(){
-    return scaling;
+float attack::getKBScaling(){
+    return KBscaling;
 }
 int attack::getHitstun(){
     return hitstunFramesBase;
 }
+float attack::getHitstunScaling(){
+    return hitstunScaling;
+}
+
 
 
 // Get the attack's hitbox

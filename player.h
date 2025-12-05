@@ -197,13 +197,13 @@ void player::getHit(attack* activeAttack){
     float forceX, forceY;
     // scale force based on current damage
     // TODO: scale the power by a value that makes sense later
-    float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getScaling()) + (*activeAttack).getKnockback();
+    float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getKBScaling()) + (*activeAttack).getKnockback();
 
     //TODO: calculate htistun scaling
     // reset timing varibles before entering hitstun, or move those timers into a separate function
     lagFrame = 0;
     hitstunTimer.resetTimer();
-    hitstunTimer.changeTimerMax((*activeAttack).getHitstun());
+    hitstunTimer.changeTimerMax((*activeAttack).getHitstun()  + (*activeAttack).getHitstunScaling()  * damage);
     hitstunTimer.isActive();
 
     // calculate the direction of knockback into x and y components
@@ -601,7 +601,8 @@ void player::enactPlayerMovement(){
 
     if(!hitstunTimer.isActive()){
             // decay X-velocity exponentially when not moving horizontally
-        if(!Keyboard.areAnyPressed({left,right})|| inAttackAnimation){
+            // THIS DOES NOT WORK WHEN HOLDING CROUCH
+        if(!Keyboard.areAnyPressed({left,right}) || inAttackAnimation){
             velocityX *= pow(velocityXDecay, abs(velocityX));
         }else{
             if(velocityX > runSpeedMax){
@@ -612,6 +613,7 @@ void player::enactPlayerMovement(){
         }
     }else{
         //have a separate x-velocity decay when in hitstun
+        velocityX *= velocityXDecay;
     }
 
     
