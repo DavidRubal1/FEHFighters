@@ -5,10 +5,12 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include "timer.h"
 #include "hitbox.h"
-#include "player.h" // uses hitbox.h
 #include "animation.h"
 #include "attack.h" // uses hitbox.h
+#include "player.h" // uses hitbox.h, uses attack.h
+
 
 // debug
 #include <stdio.h>
@@ -18,7 +20,7 @@
 
 int main()
 {
-    int frameTimeMilliseconds = 19; // time between frames
+    int frameTimeMilliseconds = 17; // time between frames
     int numGames = 0, redWins = 0, blueWins = 0;
     // program loop
     while(1){
@@ -30,7 +32,7 @@ int main()
         LCD.WriteAt("FEH Fighters", 76, 13);
         // Draw new key art for the background?
         FEHImage red;
-        red.Open("./PlayerRed/Right/PlayerRedRight0.png");
+        red.Open("./PlayerRed/Right/Idle/Idle0.png");
         red.Draw(30, 90);
         FEHImage blue;
         blue.Open("./PlayerBlue/Left/PlayerBlueLeft0.png");
@@ -162,29 +164,38 @@ int main()
         BlueUI.Draw(201,200);
         LCD.WriteAt(printP2Damage, 211, 212);
         
-
-
- 
         
-        // draw stage platforms and border
-        //stage1.drawAllPlatforms();
-        //LCD.SetFontColor(0x313030);
-        //LCD.DrawRectangle(0,0, 320, 240);
+
 
         // get an array of [XPOS, YPOS] for player 1
         //std::vector<int> XYPos_Player1 = Player1.getXYPosition();
         //std::vector<float> XYVel_Player1 = Player1.getXYVelocity();
+        Player1.action();
+        Player1.generalPlayerMovementControl();
+        Player1.enactPlayerMovement();
         
-        Player1.generalPlayerMovementControl(frameTimeMilliseconds);
-        Player1.enactPlayerMovement(frameTimeMilliseconds);
-        Player1.action(frameTimeMilliseconds);
-        Player1.playAnimations(frameTimeMilliseconds);
-        Player1.getHitbox().debugDrawHitbox(RED); // debug
+        //Player1.updateTimers();
+        Player1.manageHitboxes(&Player2);
+        printf("P2 Y-VEL: %f", Player2.getXYVelocity()[1]);
+        
+        Player1.playAnimations();
+        int debugColor;
+        if(Player1.lagFrame > 0){
+            debugColor = RED;
+        }else{
+            
+            debugColor = WHITE;
+        }
+        Player1.getHitbox().debugDrawHitbox(debugColor); // debug
+        
         Player1.resetIfOffscreen();
-        Player2.generalPlayerMovementControl(frameTimeMilliseconds);
-        Player2.enactPlayerMovement(frameTimeMilliseconds);
-        Player2.action(frameTimeMilliseconds);
-        Player2.playAnimations(frameTimeMilliseconds);
+
+
+        // add all of the player2 function calls when done
+        Player2.generalPlayerMovementControl();
+        Player2.enactPlayerMovement();
+        Player2.action();
+        Player2.playAnimations();
         Player2.resetIfOffscreen();
 
         

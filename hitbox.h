@@ -1,7 +1,7 @@
 class hitbox{
     public:
-        hitbox(int posX1, int posY1, int posX2, int posY2);
-        hitbox(int heightIn, int lengthIn, int posX, int posY, bool overload);
+        hitbox(int heightIn, int lengthIn, int posX, int posY);
+        hitbox(int heightIn, int lengthIn);
         void updateHitbox(int posX1, int posY1);
         void debugDrawHitbox(int color);
         bool rectangleIntersects(hitbox element);
@@ -25,23 +25,21 @@ class hitbox{
  * 
  ***************************************************************************/
 
-// constructor 1, for platforms 
-hitbox::hitbox(int posX1, int posY1, int posX2, int posY2){
-    x1 = posX1;
-    y1 = posY1;
-    x2 = posX2;
-    y2 = posY2;
-    length = x2-x1;
-    height = y2-y1;
-}
-// constructor 2, for players and attacks
-hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY, bool overload){
+
+// constructor 1, for players and attacks
+hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY){
     x1 = posX;
     y1 = posY;
     x2 = posX + lengthIn;
     y2 = posY + heightIn;
     length = lengthIn;
     height = heightIn;
+}
+
+// constructor 2, for attacks
+hitbox::hitbox(int heightIn, int lengthIn){
+    height = heightIn;
+    length = lengthIn;
 }
 
 std::vector<int> hitbox::getCoordinates(){
