@@ -1,6 +1,6 @@
 class player{
     public:
-        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, int startingX, int startingY,  int color);
+        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
         void generalPlayerMovementControl();
         void dash(int direction);
         void enactPlayerMovement();
@@ -108,7 +108,7 @@ class player{
         float maxGravityForce = 1.2;
 
         // controls
-        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R;
+        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
         float damage = 0;
         // TODO: WORK ON IMPLEMENTING HITSTUN
         bool inHitstun = false;
@@ -122,27 +122,29 @@ class player{
         
        
         // Number of images/frames for each attack type
-        int attackFrameCount[2] = {5, 5};  // punch has 5 frames, kick has 5 frames
+        int attackFrameCount[3] = {5, 5, 5};  // punch has 5 frames, kick has 5 frames
         
         // Frame timing arrays for each attack (in number of frames)
         // punch: frames 0-4 timing
-        int FrameTiming[2][5] = 
+        int FrameTiming[3][5] = 
         {
             {1, 1, 3, 2, 2},
-            {2, 2, 3, 3, 2}
+            {2, 2, 3, 3, 2},
+            {4, 6, 6, 3, 3}
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
-        bool FrameHasHitbox[2][5] = {
+        bool FrameHasHitbox[3][5] = {
             {false, false, false, true, false},  //punch active frames
-            {false, false, false, true, false}  //kick active frames
+            {false, false, false, true, false}, //kick active frames
+            {false, false, false, true, false}  //fireball active frames
         };  
         
         bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
 };
 
 // constructor
-player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, int startingX, int startingY, int color) 
+player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
     punch(0, 15, 10), kickAttack(1, 15, 10), projectile(2, 10, 10),
     playerAnimator(color), doubleJumpAnimator(color){
@@ -156,6 +158,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     positionY = startingY;
     basic = basicAttack;
     kick = kickAttack;
+    projectile = projectileAttack;
     playerColor = color;
 
     //set up attack info
@@ -413,9 +416,10 @@ void player::action(){
     }
     
     // Detect button press (transition from not pressed to pressed)
-    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick));
+    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile));
 
-    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held. Logic explained by Git Copilot.
+    //prevents holding of attacks.
+    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
     AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
     
     // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
@@ -429,10 +433,15 @@ void player::action(){
         }
         else if (Keyboard.isPressed(kick))
         {
-            currentAttackType = 1;// kick
+            currentAttackType = 1; //kick
             kickAttack.updateActiveState(true);
         }
-        inAttackAnimation = true;  // start an attack animation  
+        else if (Keyboard.isPressed(projectile))
+        {
+            currentAttackType = 2; //projectile
+            projectile.updateActiveState(true);
+        }
+        inAttackAnimation = true;  //indicates attack animation is being played 
         attackAnimationTimer = 0;  // reset timer to beginning of animation
         attackFrame = 0;  // start at frame 0
         lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)

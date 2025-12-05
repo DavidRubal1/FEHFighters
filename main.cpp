@@ -128,8 +128,8 @@ int main()
     }
     
 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, 160, 160, RED);
-    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_M, KEY_N, 230, 160, BLUE);
+    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, KEY_Y, 160, 160, RED);
+    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 230, 160, BLUE);
 
     
     FEHIcon::Icon backButton;
