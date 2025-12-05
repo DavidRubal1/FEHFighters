@@ -45,7 +45,7 @@ class player{
         //attacks
         attack punch;
         attack kickAttack;
-        attack projectile;
+        attack projectileAtk;
 
         // general player speed
         float velocityX = 0, velocityY = 0;
@@ -146,7 +146,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10), kickAttack(1, 15, 10), projectile(2, 10, 10),
+    punch(0, 15, 10), kickAttack(1, 15, 10), projectileAtk(2, 10, 10),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -346,7 +346,7 @@ attack* player::getCurrentAttack(){
         return &kickAttack;
         break;
         case 2:
-        return &projectile;
+        return &projectileAtk;
         break;
     }
 }
@@ -439,7 +439,7 @@ void player::action(){
         else if (Keyboard.isPressed(projectile))
         {
             currentAttackType = 2; //projectile
-            projectile.updateActiveState(true);
+            projectileAtk.updateActiveState(true);
         }
         inAttackAnimation = true;  //indicates attack animation is being played 
         attackAnimationTimer = 0;  // reset timer to beginning of animation
