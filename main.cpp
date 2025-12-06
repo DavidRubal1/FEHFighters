@@ -26,6 +26,7 @@ int main()
     while(1){
     // menu loop
     while(1){
+
         LCD.SetFontColor(WHITE);
         LCD.DrawRectangle(0, 0, 320, 240);
 
@@ -67,9 +68,12 @@ int main()
                 FEHIcon::Icon backButton;
                 backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
                 backButton.Draw();
-                LCD.WriteRC("Player 1 Wins: 6", 6, 9);
+                LCD.WriteRC("Player 1 Wins: ", 6, 9);
+                LCD.WriteRC(redWins, 6, 23);
                 LCD.WriteRC("Player 2 Wins: 7", 7, 9);
-                LCD.WriteRC("Games Played 13", 8, 9);
+                LCD.WriteRC(blueWins, 7, 23);
+                LCD.WriteRC("Games Played: ", 8, 9);
+                LCD.WriteRC(numGames, 8, 23);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
@@ -145,11 +149,14 @@ int main()
     LCD.SetFontScale(0.5);
     float p1Damage = 0.0, p2Damage = 0.0;
     //RedPercent.SetProperties("0.0", 80, 200, 39, 39, TRANSPARENT, WHITE);
+
+    //game loop
     while (1) {
         // redraw background
         background.Draw(0,0);
         // redraw UI
         RedUI.Draw(80, 200);
+
         // TODO: update percent with damage
         p1Damage = Player1.getDamage();
         std::string printP1Damage= std::to_string(p1Damage);
@@ -163,6 +170,38 @@ int main()
         LCD.WriteAt(printP1Damage, 90, 212);
         BlueUI.Draw(201,200);
         LCD.WriteAt(printP2Damage, 211, 212);
+
+        //drawing remaining lives for both players
+        FEHImage redlifeImage, bluelifeImage;
+        switch (Player1.remainingLives)
+        {
+            case 3:
+                redlifeImage.Open("./UI/redLife3.png");
+                redlifeImage.Draw(85, 209);
+                break;
+            case 2:
+                redlifeImage.Open("./UI/redLife2.png");
+                redlifeImage.Draw(85, 209);
+                break;
+            case 1:
+                redlifeImage.Open("./UI/redLife1.png");
+                redlifeImage.Draw(85, 209);
+        }
+
+        switch (Player2.remainingLives)
+        {
+            case 3:
+                bluelifeImage.Open("./UI/blueLife3.png");
+                bluelifeImage.Draw(206, 209);
+                break;
+            case 2:
+                bluelifeImage.Open("./UI/blueLife2.png");
+                bluelifeImage.Draw(206, 209);
+                break;
+            case 1:
+                bluelifeImage.Open("./UI/blueLife1.png");
+                bluelifeImage.Draw(206, 209);
+        }
         
         
 
@@ -211,6 +250,40 @@ int main()
         // update frame
         LCD.Update();
         Sleep(frameTimeMilliseconds);
+
+        //checks if player 2 has run out of lives
+        if (Player2.gameOver)
+        {
+            redWins++;
+            numGames++;
+            LCD.SetFontColor(BLACK);
+            LCD.FillRectangle(0, 0, 320, 240);
+            LCD.SetFontColor(RED);
+            LCD.WriteAt("Player 1 Wins!", 120, 100);
+            LCD.Update();
+            while(!LCD.Touch(&x,&y));
+            Sleep(1000);
+            LCD.SetFontColor(BLACK);
+            LCD.FillRectangle(0, 0, 320, 240);
+            break;
+        }
+        //checks if player 1 has run out of lives
+        if (Player1.gameOver)
+        {
+            blueWins++;
+            numGames++;
+            LCD.SetFontColor(BLACK);
+            LCD.FillRectangle(0, 0, 320, 240);
+            LCD.SetFontColor(BLUE);
+            LCD.WriteAt("Player 2 Wins!", 120, 100);
+            LCD.Update();
+            while(!LCD.Touch(&x,&y));
+            Sleep(1000);
+            LCD.SetFontColor(BLACK);
+            LCD.FillRectangle(0, 0, 320, 240);
+            break;
+            Sleep(1000);
+        }
     }
     LCD.SetFontScale(1);
 }

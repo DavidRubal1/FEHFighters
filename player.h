@@ -26,6 +26,8 @@ class player{
         hitbox getHitbox();
         int lagFrame = 0;
         float getDamage();
+        int remainingLives = 3;
+        bool gameOver = false;
 
 
     private:
@@ -407,7 +409,16 @@ void player::resetIfOffscreen(){
         velocityX = 0;
         velocityY = 0;
         damage = 0;
+        remainingLives--;
+
+        // checks for game over
+        
+        if (remainingLives == 0)
+        {
+            gameOver = true;
+        }
     }
+    
 }
 
 void player::dash(int direction){
