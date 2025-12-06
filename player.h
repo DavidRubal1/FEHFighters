@@ -435,7 +435,7 @@ void player::resetIfOffscreen(){
     if(positionX < 0 || positionX > 319 || positionY > 239 || positionY < 0){
         // give intangibility towards incoming attacks when respawned
         respawnIntangibleTimer.resetTimer();
-        respawnIntangibleTimer.changeTimerMax(45);
+        respawnIntangibleTimer.changeTimerMax(30);
         // resets position, velocity, and damage
         positionX = startingPosX;
         positionY = startingPosY -10;
