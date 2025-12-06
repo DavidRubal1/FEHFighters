@@ -14,6 +14,7 @@
 // Team G25-26
 // David Rubal and Charlie Limbert
 
+
 int main()
 {
     int frameTimeMilliseconds = 20; // time between frames in milliseconds
@@ -54,8 +55,6 @@ int main()
         float x, y;
         while(!LCD.Touch(&x,&y)) {};
         if(startButton.Pressed(x, y, 0)){
-            LCD.SetFontColor(BLACK);
-            LCD.FillRectangle(0, 0, 320, 240);
             break;
         }
         if(statsButton.Pressed(x, y, 0)){
@@ -154,21 +153,69 @@ int main()
     FEHImage BlueUI;
     BlueUI.Open("./UI/BlueUI.png");
     FEHIcon::Icon backButton;
-    backButton.SetProperties("X", 10, 10, 10, 10, WHITE, RED);
+    backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
-    
+    FEHImage RedCountdown;
+    RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
+    FEHImage BlueCountdown;
+    BlueCountdown.Open("./PlayerBlue/Left/Idle/Idle0.png");
+
+
     // set player damage to 0 before game starts
     float p1Damage = 0.0, p2Damage = 0.0;
     LCD.SetFontScale(0.5);
+    timer goTimer;
+    goTimer.changeTimerMax(30); // timer for 30 frames when "Go!" is displays
+    goTimer.resetTimer();
+
+
+    LCD.SetFontScale(2);
+    background.Draw(0,0);
+    RedUI.Draw(80, 200);
+    BlueUI.Draw(201,200);
+    RedCountdown.Draw(88, 160);
+    BlueCountdown.Draw(216, 160);
+     LCD.SetFontColor(WHITE);
+    LCD.WriteAt("3", 145, 90);
+    LCD.Update();
+    Sleep(1.0);
+    background.Draw(0,0);
+    RedUI.Draw(80, 200);
+    BlueUI.Draw(201,200);
+    RedCountdown.Draw(88, 160);
+    BlueCountdown.Draw(216, 160);
+    LCD.SetFontColor(YELLOW);
+    LCD.WriteAt("2", 145, 90);
+    LCD.Update();
+    Sleep(1.0);
+    background.Draw(0,0);
+    RedUI.Draw(80, 200);
+    BlueUI.Draw(201,200);
+    RedCountdown.Draw(88, 160);
+    BlueCountdown.Draw(216, 160);
+    LCD.SetFontColor(ORANGE);
+    LCD.WriteAt("1", 145, 90);
+    LCD.Update();
+    Sleep(1.0);
+
+
     //game loop
     while (1) {
+
         /* written by David Rubal*/
         // redraw background
         background.Draw(0,0);
         // redraw UI
         RedUI.Draw(80, 200);
         BlueUI.Draw(201,200);
-        
+        // game start countdown
+        if(goTimer.isActive()){
+            LCD.SetFontScale(2);
+            LCD.WriteAt("Go!", 130, 90);
+            goTimer.incrementTimer();
+            goTimer.updateTimerState();
+            LCD.SetFontScale(0.5);
+        }
         // get player1 damage to display
         // converts damage value into a printable string with one decimal place
         p1Damage = Player1.getDamage();
