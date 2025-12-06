@@ -20,7 +20,7 @@
 
 int main()
 {
-    int frameTimeMilliseconds = 17; // time between frames
+    int frameTimeMilliseconds = 20; // time between frames
     int numGames = 0, redWins = 0, blueWins = 0;
     // program loop
     while(1){
