@@ -40,6 +40,7 @@ int main()
    
     // menu loop  
     while(1){
+        // display main menu
         MenuArt.Draw(0, 0);
         LCD.SetFontScale(1.5);
         LCD.SetFontColor(WHITE);
@@ -47,6 +48,7 @@ int main()
         LCD.DrawHorizontalLine(38, 3, 190);
         LCD.SetFontScale(1);
 
+        // draw buttons
         startButton.Draw();
         statsButton.Draw();
         instructions.Draw();
@@ -55,9 +57,11 @@ int main()
         float x, y;
         while(!LCD.Touch(&x,&y)) {};
         if(startButton.Pressed(x, y, 0)){
+            //start game
             break;
         }
         if(statsButton.Pressed(x, y, 0)){
+            // display statistics screen
             while(1){
                 MenuArt.Draw(0,0);
                 LCD.SetFontScale(1.5);
@@ -85,6 +89,7 @@ int main()
             }
         }
         if(instructions.Pressed(x, y, 0)){
+            // display instructions screen
             while(1){
                 MenuArt.Draw(0,0);
                 LCD.SetFontScale(1.5);
@@ -115,6 +120,7 @@ int main()
             }
         }
         if(credits.Pressed(x, y, 0)){
+            // display credits screen
             while(1){
                 MenuArt.Draw(0,0);
                 LCD.SetFontScale(1.5);
@@ -140,7 +146,7 @@ int main()
         Sleep(frameTimeMilliseconds);
         LCD.Update();
     }
-    
+    /* written by David Rubal*/
     // create both player objects
     player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
     player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
@@ -155,6 +161,7 @@ int main()
     FEHIcon::Icon backButton;
     backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
+    // placeholder images for characters to display during countdown
     FEHImage RedCountdown;
     RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
     FEHImage BlueCountdown;
@@ -168,7 +175,7 @@ int main()
     goTimer.changeTimerMax(30); // timer for 30 frames when "Go!" is displays
     goTimer.resetTimer();
 
-
+    // game start countdown 
     LCD.SetFontScale(2);
     background.Draw(0,0);
     RedUI.Draw(80, 200);
