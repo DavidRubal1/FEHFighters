@@ -11,16 +11,12 @@ class player{
         void updateProjectile();
         void updateTimers();
         timer getIntangibilityTimer();
-        
         void playAnimations();
-
         void resetIfOffscreen();
-
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void action();
         attack* getCurrentAttack();
         animationType* getCurrentAttackAnimation();
-
         hitbox getHitbox();
         int lagFrame = 0;
         float getDamage();
@@ -142,7 +138,7 @@ class player{
 // constructor for player
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 7, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
+    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 5, 3, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -157,12 +153,12 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     projectile = projectileAttack;
     playerColor = color;
     if(color == BLUE){
-        direction = -1;
+        direction = -1; // Blue starts facing left
     }else{
-        direction = 1;
+        direction = 1;  // Red starts facing right
     }
 
-    //set up partial attack animation info
+    //set up partial info for attack animations
     strcpy(punchAnimation.fileName, "/Punch/");
     punchAnimation.ID = 3;
     punchAnimation.looping = false;
@@ -425,7 +421,6 @@ void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
             // disable attack to prevent attack from hitting multiple times in consecutive frames
             (*activeAttack).updateActiveState(false);
         }
-
 }
 
 // the player is sent offscreen and a life is lost
@@ -442,7 +437,8 @@ void player::resetIfOffscreen(){
         velocityX = 0;
         velocityY = 0;
         damage = 0;
-        remainingLives--;
+        remainingLives--; // jump lag to prevent instant double jump after respawning
+        inJumpLag = true;
 
         // checks for game over
         if (remainingLives == 0)
@@ -500,8 +496,6 @@ void player::action(){
 
         }
     }
-    
-    
 }
 
 // the player jumps

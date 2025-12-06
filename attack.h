@@ -1,6 +1,5 @@
 /*class written by Charlie Limbert and David Rubal*/
 class attack {
-
     public:
         attack(int attackType,int hitHeight, int hitLength, int offsetX, int offsetY);
         attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY, float velX);
@@ -11,9 +10,7 @@ class attack {
         bool checkCollision(hitbox otherHitbox);
         void moveProjectile(float velX);
         float getXVelocity();
-
         int getAttackType();
-
         int getDirection();
         float getDamage();
         float getKnockback();
@@ -22,8 +19,6 @@ class attack {
         int getHitstun();
         float getHitstunScaling();
         void playProjectileAnimation(int color);
-
-        
         bool isActive();
         
     private:
@@ -34,14 +29,14 @@ class attack {
         int positionY;
         int offX, offY;
         int playerHitboxLength = 14;
-
+        // attack properties
         float damage;
         float knockback;
         float angle;
         float KBscaling;
         int hitstunFramesBase;
         float hitstunScaling;
-
+        // projectile speed variables
         float velocityX;
         float velocityY;
         
@@ -114,7 +109,7 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
     projectile.looping = true;
         
 }
-// getters written by David Rubal
+// "getters" written by David Rubal
 
 // plays the animation of the projectile given the player color
 void attack::playProjectileAnimation(int color){
@@ -199,7 +194,6 @@ bool attack::isActive(){
     return active;
 }
 
-
 // Update the hitbox based on attack type and direction
 /*coded by Charlie Limbert*/
 void attack::updateAttackHitbox(bool attackHitboxActive){
@@ -224,7 +218,6 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
 }
 
 // Check if this attack collides with another hitbox
-/*coded by Charlie Limbert*/
 bool attack::checkCollision(hitbox otherHitbox){
     return attackHitbox.rectangleIntersects(otherHitbox);
 

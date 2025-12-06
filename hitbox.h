@@ -13,7 +13,7 @@ class hitbox{
 };
 
 /*************************************************************************
- * Info
+ * Hitbox Info
  * - The "Position" of a hitbox lies at the top-left corner of the hitbox
  * - x1 and y1 are coordinates for the top-left corner
  * - x2 and y2 are coordinates for the bottom-right corner
@@ -27,7 +27,7 @@ class hitbox{
  ***************************************************************************/
 
 
-// constructor 1, for players
+// constructor #1, for players
 hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY){
     x1 = posX;
     y1 = posY;
@@ -37,7 +37,7 @@ hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY){
     height = heightIn;
 }
 
-// constructor 2, for attacks
+// constructor #2, for attacks
 hitbox::hitbox(int heightIn, int lengthIn){
     height = heightIn;
     length = lengthIn;
@@ -62,7 +62,6 @@ void hitbox::debugDrawHitbox(int color){
     LCD.DrawRectangle(x1, y1, length, height);
 }
 
-// ununsed, but will be useful for testing if attacks hit players
 // tests intersection of this and element, assuming that both are rectangluar
 bool hitbox::rectangleIntersects(hitbox element){
     std::vector<int> elementCoords = element.getCoordinates();
