@@ -118,6 +118,8 @@ int main()
                 LCD.WriteRC("Developers:", 6, 9);
                 LCD.WriteRC("David Rubal", 7, 9);
                 LCD.WriteRC("Charlie Limbert", 8, 9);
+                LCD.WriteRC("Art Created Using:", 10, 9);
+                LCD.WriteRC("Piskel (piskelapp.com)", 9, 9);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
