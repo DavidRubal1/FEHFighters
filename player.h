@@ -115,6 +115,7 @@ class player{
         float damage = 0;
         // TODO: WORK ON IMPLEMENTING HITSTUN
         timer hitstunTimer;
+        timer respawnIntangibleTimer;
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
@@ -148,7 +149,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 0, 0), projectileProjectile(3, 10, 10, -5, 0, 4.5),
+    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 0, 0), projectileProjectile(3, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -177,7 +178,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     kickAnimation.ID = 4;
     kickAnimation.looping = false;
 
-    strcpy(projectileCastAnimation.fileName, "/Projectile/");
+    strcpy(projectileCastAnimation.fileName, "/ProjectileCast/");
     projectileCastAnimation.ID = 5;
     projectileCastAnimation.looping = false;
     // maybe add a separate variable to indicate that this should be separated from the player.
@@ -240,7 +241,7 @@ void player::updateTimers(){
 
 void player::updateProjectile(){
     projectileProjectile.moveProjectile(projectileProjectile.getXVelocity());
-
+    projectileProjectile.playProjectileAnimation(playerColor);
 }
 
 
@@ -326,16 +327,22 @@ void player::playAnimations(){
         // Update attack animation timer
         attackAnimationTimer++;
         if(attackAnimationTimer >= totalDuration){
+            if(currentAttackType == 0){
+                lagFrame = 5;  // lag after attack ends
+            }else if(currentAttackType == 1){
+                lagFrame = 7;
+            }else if(currentAttackType == 2){
+                lagFrame = 3;
+            }
+            
             inAttackAnimation = false;
             currentAttackType = -1;
             attackAnimationTimer = 0;
             attackHitboxActive = false;
-            lagFrame = 5;  // lag after attack ends
+            
             
         }else{
-            if(currentAttackType == 2 && attackAnimationTimer == 16){
-                printf("HERE\n");
-                printf("aniTimer: %d\n", attackAnimationTimer);
+            if(currentAttackType == 2 && attackAnimationTimer == 19){
                 projectileProjectile.updateAttackPosition(positionX, positionY, direction, true);
                 projectileProjectile.updateActiveState(true);
             }
@@ -430,11 +437,13 @@ void player::action(){
         updateProjectile();
     }
     // jump-cancel projectileCast attack after projectile has been created
-    if(((inAttackAnimation && (attackAnimationTimer > 14 || lagFrame != 0) && (*getCurrentAttack()).getAttackType() == 2)) && Keyboard.isPressed(up) && grounded){
-        lagFrame = 0;
-        currentAttackType = -1;
-        inAttackAnimation = false;
-    }
+    // this does not work properly
+    // if(((inAttackAnimation && (attackAnimationTimer > 14 || lagFrame != 0) && (*getCurrentAttack()).getAttackType() == 2)) && Keyboard.isPressed(up) && grounded){
+    //     lagFrame = 0;
+    //     currentAttackType = -1;
+    //     inAttackAnimation = false;
+        
+    // }
     // Decrease lag frame counter
     if(lagFrame > 0){
         lagFrame--;
@@ -689,6 +698,11 @@ void player::enactPlayerMovement(){
     playerHitbox.updateHitbox(positionX, positionY);
     if(hitstunTimer.isActive()){
         hitstunTimer.incrementTimer();
-        hitstunTimer.updateTimerState();
+        if(velocityY > 2.0){
+            hitstunTimer.setActiveState(false);
+        }else{
+            hitstunTimer.updateTimerState();
+        }
+        
     }
 }
