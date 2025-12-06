@@ -12,8 +12,6 @@ class player{
         
         void playAnimations();
 
-        void updateTimers();
-
         void resetIfOffscreen();
 
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
@@ -30,7 +28,6 @@ class player{
         float getDamage();
         int remainingLives = 3;
         bool gameOver = false;
-
 
     private:
         // player attributes
@@ -149,7 +146,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 0, 0), projectileProjectile(3, 9, 8, -5, 8, 2.5),
+    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 7, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -169,7 +166,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
         direction = 1;
     }
 
-    //set up attack info
+    //set up attack animation info
     strcpy(punchAnimation.fileName, "/Punch/");
     punchAnimation.ID = 3;
     punchAnimation.looping = false;
@@ -181,7 +178,6 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     strcpy(projectileCastAnimation.fileName, "/ProjectileCast/");
     projectileCastAnimation.ID = 5;
     projectileCastAnimation.looping = false;
-    // maybe add a separate variable to indicate that this should be separated from the player.
 }
 
 hitbox player::getHitbox(){
@@ -232,11 +228,6 @@ void player::getHit(attack* activeAttack){
     currentGravityForce = 0;
     
     damage += (*activeAttack).getDamage();
-}
-
-// maybe I dont do this?
-void player::updateTimers(){
-
 }
 
 void player::updateProjectile(){
@@ -415,8 +406,8 @@ void player::resetIfOffscreen(){
         damage = 0;
         remainingLives--;
 
+
         // checks for game over
-        
         if (remainingLives == 0)
         {
             gameOver = true;

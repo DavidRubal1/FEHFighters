@@ -21,37 +21,35 @@
 int main()
 {
     int frameTimeMilliseconds = 20; // time between frames
-    int numGames = 0, redWins = 0, blueWins = 0;
+    int numGames = 0, redWins = 0, blueWins = 0; 
+    //Menu Objects
+    FEHImage MenuArt;
+    MenuArt.Open("./MenuArt/MenuKeyArt.png");
+    FEHIcon::Icon startButton;
+    startButton.SetProperties("Play", 93, 60, 146, 30, WHITE, WHITE);
+    FEHIcon::Icon statsButton;
+    statsButton.SetProperties("Statistics", 93, 90, 146, 30, WHITE, WHITE);
+    FEHIcon::Icon instructions;
+    instructions.SetProperties("How to Play", 93, 120, 146, 30, WHITE, WHITE);
+    FEHIcon::Icon credits;
+    credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
+    FEHIcon::Icon backButton;
+    backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
     // program loop
     while(1){
     // menu loop
+
     while(1){
-
+        MenuArt.Draw(0, 0);
+        LCD.SetFontScale(1.5);
         LCD.SetFontColor(WHITE);
-        LCD.DrawRectangle(0, 0, 320, 240);
+        LCD.WriteAt("FEH Fighters", 10, 10);
+        LCD.DrawHorizontalLine(38, 3, 190);
+        LCD.SetFontScale(1);
 
-        LCD.WriteAt("FEH Fighters", 76, 13);
-        // Draw new key art for the background?
-        FEHImage red;
-        red.Open("./PlayerRed/Right/Idle/Idle0.png");
-        red.Draw(30, 90);
-        FEHImage blue;
-        blue.Open("./PlayerBlue/Left/Idle/Idle0.png");
-        blue.Draw(276, 90);
-        FEHIcon::Icon startButton;
-        startButton.SetProperties("Play", 76, 60, 168, 30, WHITE, RED);
         startButton.Draw();
-
-        FEHIcon::Icon statsButton;
-        statsButton.SetProperties("Statistics", 76, 90, 168, 30, WHITE, RED);
         statsButton.Draw();
-
-        FEHIcon::Icon instructions;
-        instructions.SetProperties("How to Play", 76, 120, 168, 30, WHITE, RED);
         instructions.Draw();
-
-        FEHIcon::Icon credits;
-        credits.SetProperties("Credits", 76, 150, 168, 30, WHITE, RED);
         credits.Draw();
 
         float x, y;
@@ -63,23 +61,26 @@ int main()
         }
         if(statsButton.Pressed(x, y, 0)){
             while(1){
-                LCD.SetFontColor(BLACK);
-                LCD.FillRectangle(0, 0, 320, 240);
-                FEHIcon::Icon backButton;
-                backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
+                MenuArt.Draw(0,0);
+                LCD.SetFontScale(1.5);
+                LCD.SetFontColor(WHITE);
+                LCD.WriteAt("FEH Fighters", 10, 10);
+                LCD.DrawHorizontalLine(38, 3, 190);
+                LCD.SetFontScale(1);
                 backButton.Draw();
-                LCD.WriteRC("Player 1 Wins: ", 6, 9);
-                LCD.WriteRC(redWins, 6, 23);
-                LCD.WriteRC("Player 2 Wins: ", 7, 9);
-                LCD.WriteRC(blueWins, 7, 23);
-                LCD.WriteRC("Games Played: ", 8, 9);
-                LCD.WriteRC(numGames, 8, 23);
+                LCD.SetFontScale(0.5);
+                LCD.WriteRC("Player 1 Wins: ", 10, 18);
+                LCD.WriteRC(redWins, 10, 35);
+                LCD.SetFontColor(LIGHTBLUE);
+                LCD.WriteRC("Player 2 Wins: ", 11, 18);
+                LCD.WriteRC(blueWins, 11, 35);
+                LCD.SetFontColor(WHITE);
+                LCD.WriteRC("Games Played: ", 12, 18);
+                LCD.WriteRC(numGames, 12, 35);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
                 if(backButton.Pressed(x1, y1, 0)){
-                    LCD.SetFontColor(BLACK);
-                    LCD.FillRectangle(0, 0, 320, 240);
                     break;
                 }
 
@@ -87,44 +88,52 @@ int main()
         }
         if(instructions.Pressed(x, y, 0)){
             while(1){
-                LCD.SetFontColor(BLACK);
-                LCD.FillRectangle(0, 0, 320, 240);
-                FEHIcon::Icon backButton;
-                backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
+                MenuArt.Draw(0,0);
+                LCD.SetFontScale(1.5);
+                LCD.SetFontColor(WHITE);
+                LCD.WriteAt("FEH Fighters", 10, 10);
+                LCD.DrawHorizontalLine(38, 3, 190);
+                LCD.SetFontScale(1);
                 backButton.Draw();
                 LCD.SetFontScale(0.5);
-                LCD.WriteRC("Player 1 - Move: WASD", 6, 6);
-                LCD.WriteRC("Punch: X, Kick: C, Projectile: V", 7, 6);
+                LCD.WriteRC("--Player 1--", 6, 16);
+                LCD.WriteRC("Move: WASD", 7, 16);
+                LCD.WriteRC("Punch: X",8, 16);
+                LCD.WriteRC("Kick: C", 9, 16);
+                LCD.WriteRC("Cast Projectile: V", 10, 16);
                 LCD.SetFontColor(LIGHTBLUE);
-                LCD.WriteRC("Player 2 - Move: Arrow Keys", 9, 6);
-                LCD.WriteRC("Punch: I, Kick: O, Projectile: P", 10, 6);
+                LCD.WriteRC("--Player 2--", 12, 16);
+                LCD.WriteRC("Move: Arrow Keys", 13, 16);
+                LCD.WriteRC("Punch: I", 14, 16);
+                LCD.WriteRC("Kick: O", 15, 16);
+                LCD.WriteRC("Cast Projectile: P", 16, 16);
                 LCD.SetFontScale(1);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
                 if(backButton.Pressed(x1, y1, 0)){
-                    LCD.SetFontColor(BLACK);
-                    LCD.FillRectangle(0, 0, 320, 240);
                     break;
                 }
             }
         }
         if(credits.Pressed(x, y, 0)){
             while(1){
-                LCD.SetFontColor(BLACK);
-                LCD.FillRectangle(0, 0, 320, 240);
-                FEHIcon::Icon backButton;
-                backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
+                MenuArt.Draw(0,0);
+                LCD.SetFontScale(1.5);
+                LCD.SetFontColor(WHITE);
+                LCD.WriteAt("FEH Fighters", 10, 10);
+                LCD.DrawHorizontalLine(38, 3, 190);
+                LCD.SetFontScale(1);
                 backButton.Draw();
-                LCD.WriteRC("Developers:", 6, 9);
-                LCD.WriteRC("David Rubal", 7, 9);
-                LCD.WriteRC("Charlie Limbert", 8, 9);
+                LCD.SetFontScale(0.5);
+                LCD.SetFontColor(WHITE);
+                LCD.WriteRC("Developers:", 10, 18);
+                LCD.WriteRC("David Rubal", 11, 18);
+                LCD.WriteRC("Charlie Limbert", 12, 18);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
                 if(backButton.Pressed(x1, y1, 0)){
-                    LCD.SetFontColor(BLACK);
-                    LCD.FillRectangle(0, 0, 320, 240);
                     break;
                 }
 
@@ -152,7 +161,7 @@ int main()
     LCD.SetFontScale(0.5);
     float p1Damage = 0.0, p2Damage = 0.0;
     //RedPercent.SetProperties("0.0", 80, 200, 39, 39, TRANSPARENT, WHITE);
-
+    FEHImage redlifeImage, bluelifeImage;
     //game loop
     while (1) {
         // redraw background
@@ -175,7 +184,7 @@ int main()
         LCD.WriteAt(printP2Damage, 211, 212);
 
         //drawing remaining lives for both players
-        FEHImage redlifeImage, bluelifeImage;
+        /*coded by Charlie Limbert*/
         switch (Player1.remainingLives)
         {
             case 3:
@@ -210,18 +219,9 @@ int main()
         Player1.generalPlayerMovementControl();
         Player1.enactPlayerMovement();
         Player1.action();
-        //Player1.updateTimers();
         Player1.manageHitboxes(&Player2);
         
         Player1.playAnimations();
-        int debugColor;
-        if(Player1.lagFrame > 0){
-            debugColor = RED;
-        }else{
-            
-            debugColor = WHITE;
-        }
-        Player1.getHitbox().debugDrawHitbox(debugColor); // debug
         Player1.resetIfOffscreen();
 
 
@@ -232,7 +232,6 @@ int main()
         Player2.manageHitboxes(&Player1);
         Player2.playAnimations();
         Player2.resetIfOffscreen();
-        Player2.getHitbox().debugDrawHitbox(WHITE);
 
         
         backButton.Draw();
@@ -249,6 +248,7 @@ int main()
         Sleep(frameTimeMilliseconds);
 
         //checks if player 2 has run out of lives
+        /*coded by Charlie Limbert*/
         if (Player2.gameOver)
         {
             redWins++;
@@ -257,9 +257,10 @@ int main()
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(RED);
             LCD.WriteAt("Player 1 Wins!", 120, 100);
+            LCD.WriteAt("Tap to Continue", 115, 115);
             LCD.Update();
             while(!LCD.Touch(&x,&y));
-            Sleep(1000);
+            Sleep(750);
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             break;
@@ -273,9 +274,10 @@ int main()
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(BLUE);
             LCD.WriteAt("Player 2 Wins!", 120, 100);
+            LCD.WriteAt("Tap to Continue", 115, 115);
             LCD.Update();
             while(!LCD.Touch(&x,&y));
-            Sleep(1000);
+            Sleep(750);
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             break;
