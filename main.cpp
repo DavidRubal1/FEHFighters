@@ -115,11 +115,11 @@ int main()
                 FEHIcon::Icon backButton;
                 backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
                 backButton.Draw();
-                LCD.WriteRC("Developers:", 6, 9);
-                LCD.WriteRC("David Rubal", 7, 9);
-                LCD.WriteRC("Charlie Limbert", 8, 9);
-                LCD.WriteRC("Art Created Using:", 10, 9);
-                LCD.WriteRC("Piskel (piskelapp.com)", 9, 9);
+                LCD.WriteRC("Developers:", 4, 4);
+                LCD.WriteRC("David Rubal", 5, 4);
+                LCD.WriteRC("Charlie Limbert", 6, 4);
+                LCD.WriteRC("Art Created Using:", 8, 4);
+                LCD.WriteRC("Piskel (piskelapp.com)", 9, 4);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
