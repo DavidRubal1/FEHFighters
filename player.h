@@ -5,6 +5,7 @@ class player{
         void dash(int direction);
         void enactPlayerMovement();
         void manageHitboxes(player *otherPlayer);
+        void jump();
         void getHit(attack* activeAttack);
         void groundPlayer(int groundYLevel);
         
@@ -56,7 +57,7 @@ class player{
         float velocityXLimit = 20, velocityYLimit = 20;
 
         // grounded speed stuff
-        float accelerationX = 1.1;
+        float accelerationX = 1.05;
         float dashSpeedMod = 2;
         float runSpeedMax = 3;
         float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
@@ -65,7 +66,7 @@ class player{
         bool grounded = true;
 
         // airborne
-        float airspeedMod = 0.75;
+        float airspeedMod = 0.6;
         bool doubleJumpUsed = false;
 
         // dash variables
@@ -127,7 +128,7 @@ class player{
         // punch: frames 0-4 timing
         int FrameTiming[3][5] = 
         {
-            {1, 1, 3, 2, 2},
+            {1, 1, 2, 2, 3},
             {2, 2, 3, 3, 2},
             {4, 4, 6, 3, 3}
         };
@@ -195,15 +196,21 @@ void player::setXYVelocity(float x, float y){
 // TODO: rework this
 void player::getHit(attack* activeAttack){
     float forceX, forceY;
+    float hitstunMult = 1;
     // scale force based on current damage
     // TODO: scale the power by a value that makes sense later
     float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getKBScaling()) + (*activeAttack).getKnockback();
+    // printf("FORCE: %f", force);
+    // if(force < 3.5){
+    //     hitstunMult = 0.75;
+    //     force /= 2;
+    // }
 
     //TODO: calculate htistun scaling
     // reset timing varibles before entering hitstun, or move those timers into a separate function
     lagFrame = 0;
     hitstunTimer.resetTimer();
-    hitstunTimer.changeTimerMax((*activeAttack).getHitstun()  + (*activeAttack).getHitstunScaling()  * damage);
+    hitstunTimer.changeTimerMax((*activeAttack).getHitstun() * hitstunMult  + (*activeAttack).getHitstunScaling()  * damage);
     hitstunTimer.isActive();
 
     // calculate the direction of knockback into x and y components
@@ -268,36 +275,6 @@ void player::playAnimations(){
     if(inAttackAnimation && !hitstunTimer.isActive()){
         char filePath[64];
         
-        // Determine the correct attack sprite directory based on player color, direction, and attack type
-        // if(playerColor == RED)
-        // {
-        //     if(direction == -1)
-        //     {
-        //         // Punch left or other left attacks
-        //         if(currentAttackType == 0){
-        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftPunch/");
-        //         }
-        //         // Add more attack types here:
-        //         else if(currentAttackType == 1){
-        //             strcpy(filePath, "./PlayerRed/PlayerRedLeftKick/");
-        //         }
-        //     }
-        //     else
-        //     {
-        //         //right attacks
-        //         if(currentAttackType == 0)
-        //         {
-        //             strcpy(filePath, "./PlayerRed/PlayerRedRightPunch/");
-        //         }
-        //         // Add more attack types here:
-        //         else if(currentAttackType == 1)
-        //         {
-        //             strcpy(filePath, "./PlayerRed/PlayerRedRightKick/");
-        //         }
-        //     }
-        // }
-
-
         // Calculate total animation duration by summing all frame timings
         int totalDuration = 0;
         for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
@@ -418,6 +395,13 @@ void player::dash(int direction){
 
 /*coded by Charlie Limbert*/
 void player::action(){
+    // this crashes when I am in lag, holding up and landing
+    // only allow this for projectiles TODO
+    // if(((inAttackAnimation && (*getCurrentAttack()).isActive())) && Keyboard.isPressed(up) && grounded){
+    //     inAttackAnimation = false;
+    //     lagFrame = 0;
+    //     currentAttackType = -1;
+    // }
     // Decrease lag frame counter
     if(lagFrame > 0){
         lagFrame--;
@@ -459,7 +443,11 @@ void player::action(){
     
 }
 
-
+void player::jump(){
+    currentGravityForce = 0;
+    velocityY -= jumpForce;
+    inJumpLag = true;
+}
 
 void player::generalPlayerMovementControl(){
     if(!hitstunTimer.isActive()){
@@ -500,9 +488,7 @@ void player::generalPlayerMovementControl(){
                 }
                 //jump when on ground
                 if(Keyboard.isPressed(up)){
-                    currentGravityForce = 0;
-                    velocityY -= jumpForce;
-                    inJumpLag = true;
+                    jump();
                 }
             }
                 
@@ -534,12 +520,24 @@ void player::generalPlayerMovementControl(){
                     velocityY =- (jumpForce-1);
                     doubleJumpX = positionX - 3;
                     doubleJumpY = positionY + hitboxHeight - 1;
+                    if(!Keyboard.isPressed({left, right})){
+                        if(Keyboard.isPressed(left)){
+                            direction = -1;
+                        }
+                        if(Keyboard.isPressed(right)){
+                            direction = 1;
+                            
+                        }
+                        velocityX = 2.0 * direction;
+                    }
+
+                    }
 
                 }
             }
         }
     
-    }
+    
 
     // other functionality, TODO: move these to a separate function or something
 

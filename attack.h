@@ -64,26 +64,26 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
         case 0: // punch
         damage = 4.0;
         knockback = 5.0;
-        angle = 1.0;
+        angle = .85;
         KBscaling = 1.0;
         hitstunFramesBase = 3;
         hitstunScaling = 0.1;
         break;
         case 1: // kick
-        damage = 10.0;
-        knockback = 2.0;
-        angle = 0.5;
-        KBscaling = 1.5;
+        damage = 7.0;
+        knockback = 2.5;
+        angle = 0.4;
+        KBscaling = 2;
         hitstunFramesBase = 2;
         hitstunScaling = 0.3;
         break; // projectile
         case 2:
         damage = 3.0;
         knockback = 4.0;
-        angle = 1;
+        angle = 2;
         KBscaling = 1.5;
         hitstunFramesBase = 5;
-        hitstunScaling = 0.05;
+        hitstunScaling = 0.1;
         break;
     }
 }
