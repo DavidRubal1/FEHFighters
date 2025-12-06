@@ -7,22 +7,20 @@
 #include <string>
 #include "timer.h"
 #include "hitbox.h"
-#include "animation.h"
-#include "attack.h" // uses hitbox.h
-#include "player.h" // uses hitbox.h, uses attack.h
-
-
-// debug
-#include <stdio.h>
+#include "animation.h" // uses timer.h
+#include "attack.h" // uses hitbox.h and animation.h
+#include "player.h" // uses hitbox.h, attack.h, and animation.h
 
 // Team G25-26
 // David Rubal and Charlie Limbert
 
 int main()
 {
-    int frameTimeMilliseconds = 20; // time between frames
+    int frameTimeMilliseconds = 20; // time between frames in milliseconds
+    // variables to keep track of wins and games
     int numGames = 0, redWins = 0, blueWins = 0; 
     //Menu Objects
+    /* menu coded by David Rubal*/
     FEHImage MenuArt;
     MenuArt.Open("./MenuArt/MenuKeyArt.png");
     FEHIcon::Icon startButton;
@@ -35,10 +33,11 @@ int main()
     credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
     FEHIcon::Icon backButton;
     backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
-    // program loop
+    // program loop, never exit
     while(1){
-    // menu loop
 
+   
+    // menu loop  
     while(1){
         MenuArt.Draw(0, 0);
         LCD.SetFontScale(1.5);
@@ -143,44 +142,47 @@ int main()
         LCD.Update();
     }
     
-
+    // create both player objects
     player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
     player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
 
-    
-    FEHIcon::Icon backButton;
-    backButton.SetProperties("X", 10, 10, 20, 20, WHITE, RED);
-    
+    // create FEHImage objects for each background element
     FEHImage background;
     background.Open("./Background/FEHBackgroundVer3.png");
     FEHImage RedUI;
     RedUI.Open("./UI/RedUI.png");
     FEHImage BlueUI;
     BlueUI.Open("./UI/BlueUI.png");
-    //FEHIcon::Icon RedPercent;
-    LCD.SetFontScale(0.5);
-    float p1Damage = 0.0, p2Damage = 0.0;
-    //RedPercent.SetProperties("0.0", 80, 200, 39, 39, TRANSPARENT, WHITE);
+    FEHIcon::Icon backButton;
+    backButton.SetProperties("X", 10, 10, 10, 10, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
+    
+    // set player damage to 0 before game starts
+    float p1Damage = 0.0, p2Damage = 0.0;
+    LCD.SetFontScale(0.5);
     //game loop
     while (1) {
+        /* written by David Rubal*/
         // redraw background
         background.Draw(0,0);
         // redraw UI
         RedUI.Draw(80, 200);
+        BlueUI.Draw(201,200);
         
-        // get player damage to display
+        // get player1 damage to display
+        // converts damage value into a printable string with one decimal place
         p1Damage = Player1.getDamage();
         std::string printP1Damage= std::to_string(p1Damage);
         int p1DecimalIndex = printP1Damage.find(".");
         printP1Damage = printP1Damage.substr(0, p1DecimalIndex) + printP1Damage.substr(p1DecimalIndex, 2);
+        // get player2 damage to display
         p2Damage = Player2.getDamage();
         std::string printP2Damage = std::to_string(p2Damage);
         int p2DecimalIndex = printP2Damage.find(".");
         printP2Damage = printP2Damage.substr(0, p2DecimalIndex) + printP2Damage.substr(p2DecimalIndex, 2);
+        // display current damage
         LCD.SetFontColor(WHITE);
         LCD.WriteAt(printP1Damage, 90, 212);
-        BlueUI.Draw(201,200);
         LCD.WriteAt(printP2Damage, 211, 212);
 
         //drawing remaining lives for both players
@@ -215,31 +217,36 @@ int main()
                 bluelifeImage.Draw(206, 209);
         }
         
-        
+        // get input for player movement
         Player1.generalPlayerMovementControl();
+        // move the player and handle solid collisions
         Player1.enactPlayerMovement();
+        // get input for attacks
         Player1.action();
+        // check for attack collision with other player
         Player1.manageHitboxes(&Player2);
-        
+        // play current player animation
         Player1.playAnimations();
+        // reset the player to their starting point after they fall
         Player1.resetIfOffscreen();
+        Player1.updateTimers();
 
 
-        // add all of the player2 function calls when done
+        // perform the same functions for player2
         Player2.generalPlayerMovementControl();
         Player2.enactPlayerMovement();
         Player2.action();
         Player2.manageHitboxes(&Player1);
         Player2.playAnimations();
         Player2.resetIfOffscreen();
+        Player2.updateTimers();
 
-        
+        // draw the back button to exit mid-game
         backButton.Draw();
         float x, y;
         LCD.Touch(&x, &y);
         if(backButton.Pressed(x, y, 0)){
-            LCD.SetFontColor(BLACK);
-            LCD.FillRectangle(0, 0, 320, 240);
+            // return to menu if pressed
             break;
         }
 
