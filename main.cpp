@@ -156,6 +156,7 @@ int main()
         background.Draw(0,0);
         // redraw UI
         RedUI.Draw(80, 200);
+
         // TODO: update percent with damage
         p1Damage = Player1.getDamage();
         std::string printP1Damage= std::to_string(p1Damage);
@@ -169,6 +170,38 @@ int main()
         LCD.WriteAt(printP1Damage, 90, 212);
         BlueUI.Draw(201,200);
         LCD.WriteAt(printP2Damage, 211, 212);
+
+        //drawing remaining lives for both players
+        FEHImage redlifeImage, bluelifeImage;
+        switch (Player1.remainingLives)
+        {
+            case 3:
+                redlifeImage.Open("./UI/redLife3.png");
+                redlifeImage.Draw(85, 209);
+                break;
+            case 2:
+                redlifeImage.Open("./UI/redLife2.png");
+                redlifeImage.Draw(85, 209);
+                break;
+            case 1:
+                redlifeImage.Open("./UI/redLife1.png");
+                redlifeImage.Draw(85, 209);
+        }
+
+        switch (Player2.remainingLives)
+        {
+            case 3:
+                bluelifeImage.Open("./UI/blueLife3.png");
+                bluelifeImage.Draw(206, 209);
+                break;
+            case 2:
+                bluelifeImage.Open("./UI/blueLife2.png");
+                bluelifeImage.Draw(206, 209);
+                break;
+            case 1:
+                bluelifeImage.Open("./UI/blueLife1.png");
+                bluelifeImage.Draw(206, 209);
+        }
         
         
 
@@ -227,10 +260,12 @@ int main()
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(RED);
-            LCD.WriteAt("Player 1 Wins!", 100, 100);
+            LCD.WriteAt("Player 1 Wins!", 120, 100);
             LCD.Update();
-            while(!LCD.Touch(&x,&y)) 
-            {};
+            while(!LCD.Touch(&x,&y));
+            Sleep(1000);
+            LCD.SetFontColor(BLACK);
+            LCD.FillRectangle(0, 0, 320, 240);
             break;
         }
         //checks if player 1 has run out of lives
@@ -241,10 +276,9 @@ int main()
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(BLUE);
-            LCD.WriteAt("Player 2 Wins!", 100, 100);
+            LCD.WriteAt("Player 2 Wins!", 120, 100);
             LCD.Update();
-            while(!LCD.Touch(&x,&y)) 
-            {};
+            while(!LCD.Touch(&x,&y));
             Sleep(1000);
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);

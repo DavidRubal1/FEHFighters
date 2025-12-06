@@ -402,14 +402,15 @@ void player::resetIfOffscreen(){
         velocityY = 0;
         damage = 0;
         remainingLives--;
+
+        // checks for game over
+        
+        if (remainingLives == 0)
+        {
+            gameOver = true;
+        }
     }
-    if (remainingLives == 0)
-    {
-        gameOver = true;
-
-
-
-    }
+    
 }
 
 void player::dash(int direction){
