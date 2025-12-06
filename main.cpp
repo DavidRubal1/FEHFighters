@@ -94,7 +94,8 @@ int main()
                 backButton.Draw();
                 LCD.SetFontScale(0.5);
                 LCD.WriteRC("Player 1 - Move: WASD", 6, 6);
-                LCD.WriteRC("Punch: C, Kick: V, Projectile: B", 7, 6);
+                LCD.WriteRC("Punch: X, Kick: C, Projectile: V", 7, 6);
+                LCD.SetFontColor(LIGHTBLUE);
                 LCD.WriteRC("Player 2 - Move: Arrow Keys", 9, 6);
                 LCD.WriteRC("Punch: I, Kick: O, Projectile: P", 10, 6);
                 LCD.SetFontScale(1);
@@ -134,7 +135,7 @@ int main()
     }
     
 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_C, KEY_V, KEY_B, 88, 160, RED);
+    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
     player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
 
     
