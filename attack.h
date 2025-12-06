@@ -1,3 +1,4 @@
+/*class written by Charlie Limbert and David Rubal*/
 class attack {
 
     public:
@@ -32,7 +33,7 @@ class attack {
         int positionX;
         int positionY;
         int offX, offY;
-        int magicCorrectingFactor = 14;
+        int playerHitboxLength = 14;
 
         float damage;
         float knockback;
@@ -57,6 +58,7 @@ class attack {
 };
 
 // Constructor
+/* written by Charlie Limbert and David Rubal*/
 attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY)
     : attackHitbox(hitHeight, hitLength){
     this->attackType = attackType;
@@ -112,55 +114,66 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
     projectile.looping = true;
         
 }
+// getters written by David Rubal
 
+// plays the animation of the projectile given the player color
 void attack::playProjectileAnimation(int color){
     animation projectileAnimator(color);
     projectileAnimator.playAnimation(projectile.fileName, positionX, positionY, direction, projectile.finalFrameNum, projectile.frameLength, projectile.looping, projectile.ID);
 }
 
+// returns the attack's type (0 = punch, 1 = kick, 2 = cast)
 int attack::getAttackType(){
     return attackType;
 }
-
+// gets the direction of the attack (used for kb calculation)
 int attack::getDirection(){
     return direction;
 }
 
+// gets the damage of the attack
 float attack::getDamage(){
     return damage;
 }
 
+// gets the knockback of the attack
 float attack::getKnockback(){
     return knockback;
 }
 
+// gets the angle of the attack
 float attack::getAngle(){
     return angle;
 }
+// gets the knockback scaling of the attack
 float attack::getKBScaling(){
     return KBscaling;
 }
+// gets the hitstun amount of the attack
 int attack::getHitstun(){
     return hitstunFramesBase;
 }
+// gets the hitstun scaling  of the attack
 float attack::getHitstunScaling(){
     return hitstunScaling;
 }
 
-// Get the attack's hitbox
+// returns a copy of the attack's hitbox
 hitbox attack::getHitbox(){
     return attackHitbox;
 }
 
+// gets the velocity of the attack (projecile only)
 float attack::getXVelocity(){
     return velocityX;
 }
 
 // Update the position of the attack
+/*coded by Charlie Limbert*/
 void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
     printf("PosX Start: %d\n", posX);
     if(dir == 1){
-        this->positionX = posX + magicCorrectingFactor - offX;
+        this->positionX = posX + playerHitboxLength - offX;
     }else{
         this->positionX = posX - hitboxLength + offX;
     }
@@ -188,6 +201,7 @@ bool attack::isActive(){
 
 
 // Update the hitbox based on attack type and direction
+/*coded by Charlie Limbert*/
 void attack::updateAttackHitbox(bool attackHitboxActive){
 
         if(direction == -1){
@@ -208,6 +222,7 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
 }
 
 // Check if this attack collides with another hitbox
+/*coded by Charlie Limbert*/
 bool attack::checkCollision(hitbox otherHitbox){
     return attackHitbox.rectangleIntersects(otherHitbox);
 

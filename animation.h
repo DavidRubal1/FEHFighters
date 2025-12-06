@@ -1,3 +1,4 @@
+// class and all functions written by David Rubal
 class animation{
     public:
         animation(int color);
@@ -13,19 +14,23 @@ class animation{
         timer holdTime;
 };
 
+// Constructor
 animation::animation(int color)
 : animationTimer(), holdTime(){
     this->color = color;
 }
 
+// returns a copy of the animationTimer
 timer animation::getTimer(){
     return animationTimer;
 }
+// resets the animation timer
 void animation::resetTimer(){
     animationTimer.resetTimer();
 }
 
-// player animations
+// plays a frame of animation given info about the animation
+// animation path must follow ./Player(Color)/(Direction)/
 void animation::playAnimation(char fileBaseName[], int posX, int posY, int direction, int finalFrameNum, int frameLength, bool looping, int ID){
     char filePath[64] = "";
     if(currentAnimationID != ID){
@@ -66,7 +71,8 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
 
 }
 
-// non-player-bound directionless animations (double jump, etc)
+// plays a frame of animation given info about the animation
+// made for non-player-bound directionless animations (double jump)
 void animation::playAnimation(char fileBaseName[], int posX, int posY, int finalFrameNum, int frameLength, bool looping, int ID){
     char filePath[64] = "";
     if(currentAnimationID != ID){
@@ -76,7 +82,7 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int final
         currentAnimationID = ID;
     }
     animationTimer.updateTimerState();
-    if(looping){
+    if(looping && !animationTimer.isActive()){
         if(!animationTimer.isActive()){
             animationTimer.resetTimer();
         }
@@ -98,13 +104,13 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int final
 }
 
 
-// structs to create types of animations for easy compatibility with the playAnimation methods above
+// struct to create types of animations for simple compatibility with the playAnimation methods above
 struct animationType{
     char fileName[32];
     int finalFrameNum; //the # of the last frame of the animation
     bool looping;
     int ID;
-    int frameLength = 1;
+    int frameLength = 1; // how long to hold the current frame for
 };
 
 

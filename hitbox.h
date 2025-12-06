@@ -1,3 +1,4 @@
+// class and all methods written by David Rubal
 class hitbox{
     public:
         hitbox(int heightIn, int lengthIn, int posX, int posY);
@@ -12,7 +13,7 @@ class hitbox{
 };
 
 /*************************************************************************
- * IMPORTANT:
+ * Info
  * - The "Position" of a hitbox lies at the top-left corner of the hitbox
  * - x1 and y1 are coordinates for the top-left corner
  * - x2 and y2 are coordinates for the bottom-right corner
@@ -26,7 +27,7 @@ class hitbox{
  ***************************************************************************/
 
 
-// constructor 1, for players and attacks
+// constructor 1, for players
 hitbox::hitbox(int heightIn, int lengthIn, int posX, int posY){
     x1 = posX;
     y1 = posY;
@@ -42,18 +43,20 @@ hitbox::hitbox(int heightIn, int lengthIn){
     length = lengthIn;
 }
 
+// returns a vector array of the hitbox's top-left coordinates
 std::vector<int> hitbox::getCoordinates(){
     return {x1, y1, x2, y2};
 }
 
+// updates the hitbox coordinates based on given player position
 void hitbox::updateHitbox(int posX, int posY){
     x1 = posX;
     y1 = posY;
     x2 = posX + length;
     y2 = posY + height;
-    
 }
 
+//funtions for viewing hitboxes, used for debugging
 void hitbox::debugDrawHitbox(int color){
     LCD.SetFontColor(color);
     LCD.DrawRectangle(x1, y1, length, height);
