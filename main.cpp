@@ -70,7 +70,7 @@ int main()
                 backButton.Draw();
                 LCD.WriteRC("Player 1 Wins: ", 6, 9);
                 LCD.WriteRC(redWins, 6, 23);
-                LCD.WriteRC("Player 2 Wins: 7", 7, 9);
+                LCD.WriteRC("Player 2 Wins: ", 7, 9);
                 LCD.WriteRC(blueWins, 7, 23);
                 LCD.WriteRC("Games Played: ", 8, 9);
                 LCD.WriteRC(numGames, 8, 23);
@@ -93,8 +93,10 @@ int main()
                 backButton.SetProperties("Back", 10, 10, 50, 30, WHITE, RED);
                 backButton.Draw();
                 LCD.SetFontScale(0.5);
-                LCD.WriteRC("Player 1 - Move: WASD, Atatck: T", 6, 9);
-                LCD.WriteRC("Player 2 - Move: Arrow Keys, Atatck: M", 7, 9);
+                LCD.WriteRC("Player 1 - Move: WASD", 6, 6);
+                LCD.WriteRC("Punch: C, Kick: V, Projectile: B", 7, 6);
+                LCD.WriteRC("Player 2 - Move: Arrow Keys", 9, 6);
+                LCD.WriteRC("Punch: I, Kick: O, Projectile: P", 10, 6);
                 LCD.SetFontScale(1);
                 LCD.Update();
                 float x1, y1;
@@ -132,8 +134,8 @@ int main()
     }
     
 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_T, KEY_R, KEY_Y, 160, 160, RED);
-    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 230, 160, BLUE);
+    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_C, KEY_V, KEY_B, 88, 160, RED);
+    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
 
     
     FEHIcon::Icon backButton;
@@ -156,14 +158,14 @@ int main()
         background.Draw(0,0);
         // redraw UI
         RedUI.Draw(80, 200);
-
-        // TODO: update percent with damage
+        
+        // get player damage to display
         p1Damage = Player1.getDamage();
         std::string printP1Damage= std::to_string(p1Damage);
         int p1DecimalIndex = printP1Damage.find(".");
         printP1Damage = printP1Damage.substr(0, p1DecimalIndex) + printP1Damage.substr(p1DecimalIndex, 2);
         p2Damage = Player2.getDamage();
-        std::string printP2Damage= std::to_string(p2Damage);
+        std::string printP2Damage = std::to_string(p2Damage);
         int p2DecimalIndex = printP2Damage.find(".");
         printP2Damage = printP2Damage.substr(0, p2DecimalIndex) + printP2Damage.substr(p2DecimalIndex, 2);
         LCD.SetFontColor(WHITE);
@@ -204,12 +206,6 @@ int main()
         }
         
         
-
-
-        // get an array of [XPOS, YPOS] for player 1
-        //std::vector<int> XYPos_Player1 = Player1.getXYPosition();
-        //std::vector<float> XYVel_Player1 = Player1.getXYVelocity();
-        
         Player1.generalPlayerMovementControl();
         Player1.enactPlayerMovement();
         Player1.action();
@@ -225,7 +221,6 @@ int main()
             debugColor = WHITE;
         }
         Player1.getHitbox().debugDrawHitbox(debugColor); // debug
-        
         Player1.resetIfOffscreen();
 
 
@@ -233,6 +228,7 @@ int main()
         Player2.generalPlayerMovementControl();
         Player2.enactPlayerMovement();
         Player2.action();
+        Player2.manageHitboxes(&Player1);
         Player2.playAnimations();
         Player2.resetIfOffscreen();
         Player2.getHitbox().debugDrawHitbox(WHITE);

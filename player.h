@@ -8,6 +8,7 @@ class player{
         void jump();
         void getHit(attack* activeAttack);
         void groundPlayer(int groundYLevel);
+        void updateProjectile();
         
         void playAnimations();
 
@@ -48,12 +49,13 @@ class player{
         //attacks
         attack punch;
         attack kickAttack;
-        attack projectileAtk;
+        attack projectileCast;
+        attack projectileProjectile;
 
         // general player speed
         float velocityX = 0, velocityY = 0;
         int knockbackVelX, knockbackVelY;
-        int direction = 1;
+        int direction;
 
         // unused maybe use this to limit speed? knockback will make this hard
         float velocityXLimit = 20, velocityYLimit = 20;
@@ -86,15 +88,13 @@ class player{
         // attack animations
         animationType punchAnimation;
         animationType kickAnimation;
-        animationType projectileAnimation;
+        animationType projectileCastAnimation;
 
         
         animation doubleJumpAnimator;
         animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
 
         int doubleJumpX, doubleJumpY;
-
-
 
         //jump variables
         float jumpForce = 6;
@@ -148,7 +148,7 @@ class player{
 // constructor
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileAtk(2, 10, 10, 0, 0),
+    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 10, 0, 0), projectileProjectile(3, 10, 10, -5, 0, 4.5),
     playerAnimator(color), doubleJumpAnimator(color){
     left = leftwards;
     right = rightwards;
@@ -162,6 +162,11 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     kick = kickAttack;
     projectile = projectileAttack;
     playerColor = color;
+    if(color == BLUE){
+        direction = -1;
+    }else{
+        direction = 1;
+    }
 
     //set up attack info
     strcpy(punchAnimation.fileName, "/Punch/");
@@ -172,9 +177,9 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     kickAnimation.ID = 4;
     kickAnimation.looping = false;
 
-    strcpy(projectileAnimation.fileName, "/Projectile/");
-    projectileAnimation.ID = 5;
-    projectileAnimation.looping = false;
+    strcpy(projectileCastAnimation.fileName, "/Projectile/");
+    projectileCastAnimation.ID = 5;
+    projectileCastAnimation.looping = false;
     // maybe add a separate variable to indicate that this should be separated from the player.
 }
 
@@ -233,6 +238,11 @@ void player::updateTimers(){
 
 }
 
+void player::updateProjectile(){
+    projectileProjectile.moveProjectile(projectileProjectile.getXVelocity());
+
+}
+
 
 
 
@@ -288,7 +298,6 @@ void player::playAnimations(){
         (*currentAttackAnimation).finalFrameNum = totalDuration;
 
         
-        
         // Determine current frame based on timer
         int elapsedTime = 0;
         attackHitboxActive = false;
@@ -322,6 +331,14 @@ void player::playAnimations(){
             attackAnimationTimer = 0;
             attackHitboxActive = false;
             lagFrame = 5;  // lag after attack ends
+            
+        }else{
+            if(currentAttackType == 2 && attackAnimationTimer == 16){
+                printf("HERE\n");
+                printf("aniTimer: %d\n", attackAnimationTimer);
+                projectileProjectile.updateAttackPosition(positionX, positionY, direction, true);
+                projectileProjectile.updateActiveState(true);
+            }
         }
     }
 }
@@ -335,7 +352,7 @@ attack* player::getCurrentAttack(){
         return &kickAttack;
         break;
         case 2:
-        return &projectileAtk;
+        return &projectileCast;
         break;
     }
 }
@@ -349,7 +366,7 @@ animationType* player::getCurrentAttackAnimation(){
         return &kickAnimation;
         break;
         case 2:
-        return &projectileAnimation;
+        return &projectileCastAnimation;
         break;
     }
 }
@@ -363,6 +380,9 @@ void player::manageHitboxes(player *otherPlayer){
         if(attackHitboxActive){
             checkAttackHits(otherPlayer, currentAttack);
         }
+    }
+    if(projectileProjectile.isActive()){
+        checkAttackHits(otherPlayer, &projectileProjectile);
     }
     
 }
@@ -406,13 +426,15 @@ void player::dash(int direction){
 
 /*coded by Charlie Limbert*/
 void player::action(){
-    // this crashes when I am in lag, holding up and landing
-    // only allow this for projectiles TODO
-    // if(((inAttackAnimation && (*getCurrentAttack()).isActive())) && Keyboard.isPressed(up) && grounded){
-    //     inAttackAnimation = false;
-    //     lagFrame = 0;
-    //     currentAttackType = -1;
-    // }
+    if(projectileProjectile.isActive()){
+        updateProjectile();
+    }
+    // jump-cancel projectileCast attack after projectile has been created
+    if(((inAttackAnimation && (attackAnimationTimer > 14 || lagFrame != 0) && (*getCurrentAttack()).getAttackType() == 2)) && Keyboard.isPressed(up) && grounded){
+        lagFrame = 0;
+        currentAttackType = -1;
+        inAttackAnimation = false;
+    }
     // Decrease lag frame counter
     if(lagFrame > 0){
         lagFrame--;
@@ -442,7 +464,7 @@ void player::action(){
             else if (Keyboard.isPressed(projectile))
             {
                 currentAttackType = 2; //projectile
-                projectileAtk.updateActiveState(true);
+                projectileCast.updateActiveState(true);
             }
             inAttackAnimation = true;  //indicates attack animation is being played 
             attackAnimationTimer = 0;  // reset timer to beginning of animation
@@ -502,8 +524,6 @@ void player::generalPlayerMovementControl(){
                     jump();
                 }
             }
-                
-                
         }else{ 
             // airborne movement (grouded == false)
             if(!Keyboard.isPressed({left, right})){
@@ -534,12 +554,13 @@ void player::generalPlayerMovementControl(){
                     if(!Keyboard.isPressed({left, right})){
                         if(Keyboard.isPressed(left)){
                             direction = -1;
+                            velocityX = 2.0 * direction;
                         }
                         if(Keyboard.isPressed(right)){
                             direction = 1;
+                            velocityX = 2.0 * direction;
                             
                         }
-                        velocityX = 2.0 * direction;
                     }
 
                     }

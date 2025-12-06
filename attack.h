@@ -2,11 +2,14 @@ class attack {
 
     public:
         attack(int attackType,int hitHeight, int hitLength, int offsetX, int offsetY);
+        attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY, float velX);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);
         void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
+        void moveProjectile(float velX);
+        float getXVelocity();
 
         int getAttackType();
 
@@ -49,7 +52,7 @@ class attack {
         
         // hitbox for attack
         hitbox attackHitbox;
-
+        //animation projectileAnimator;
 };
 
 // Constructor
@@ -67,25 +70,47 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
         angle = .85;
         KBscaling = 1.0;
         hitstunFramesBase = 3;
-        hitstunScaling = 0.1;
+        hitstunScaling = 0.05;
         break;
         case 1: // kick
         damage = 7.0;
-        knockback = 2.5;
+        knockback = 3;
         angle = 0.4;
-        KBscaling = 2;
+        KBscaling = 2.2;
         hitstunFramesBase = 2;
-        hitstunScaling = 0.3;
-        break; // projectile
+        hitstunScaling = 0.1;
+        break; // projectile cast
         case 2:
-        damage = 3.0;
+        damage = 2.0;
         knockback = 4.0;
-        angle = 2;
+        angle = 1;
         KBscaling = 1.5;
         hitstunFramesBase = 5;
         hitstunScaling = 0.1;
         break;
     }
+}
+
+// projectile constructor
+attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY, float velX)
+    : attackHitbox(hitHeight, hitLength){
+    this->attackType = attackType;
+    this->hitboxHeight = hitHeight;
+    this->hitboxLength = hitLength;
+    this->offX = offsetX;
+    this->offY = offsetY;
+    this->velocityX = velX;
+    damage = 5.0;
+    knockback = 3.0;
+    angle = 2;
+    KBscaling = 1.5;
+    hitstunFramesBase = 13;
+    hitstunScaling = 0.1;
+        
+}
+
+int attack::getAttackType(){
+    return attackType;
 }
 
 int attack::getDirection(){
@@ -113,20 +138,18 @@ float attack::getHitstunScaling(){
     return hitstunScaling;
 }
 
-
-
 // Get the attack's hitbox
 hitbox attack::getHitbox(){
     return attackHitbox;
 }
 
+float attack::getXVelocity(){
+    return velocityX;
+}
+
 // Update the position of the attack
 void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
     printf("PosX Start: %d\n", posX);
-    // if(dir == 1){
-    //     //magic hitbox alignment voodoo
-    //     posX += magicCorrectingFactor;
-    // }
     if(dir == 1){
         this->positionX = posX + magicCorrectingFactor - offX;
     }else{
@@ -137,6 +160,14 @@ void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitbox
     updateAttackHitbox(attackHitboxActive);
 }
 
+void attack::moveProjectile(float velX){
+    if(positionX > 0 && positionX < 320){
+        positionX += velX * direction;
+        updateAttackHitbox(true);
+    }else{
+        active = false;
+    }
+}
 
 void attack::updateActiveState(bool state){
     active = state;
@@ -145,6 +176,7 @@ void attack::updateActiveState(bool state){
 bool attack::isActive(){
     return active;
 }
+
 
 // Update the hitbox based on attack type and direction
 void attack::updateAttackHitbox(bool attackHitboxActive){
@@ -171,6 +203,3 @@ bool attack::checkCollision(hitbox otherHitbox){
     return attackHitbox.rectangleIntersects(otherHitbox);
 
 }
-
-
-
