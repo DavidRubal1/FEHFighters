@@ -211,13 +211,15 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
             // punch extends to the right
             attackHitbox.updateHitbox(positionX, positionY);
         }
-        if(attackHitboxActive){
-            if(active){
-                attackHitbox.debugDrawHitbox(RED);
-            }else{
-                attackHitbox.debugDrawHitbox(WHITE);
-            }
-        }
+        // debug code for viewing active attack hitboxes
+        // intentionally left commented for future debugging
+        // if(attackHitboxActive){
+        //     if(active){
+        //         attackHitbox.debugDrawHitbox(RED);
+        //     }else{
+        //         attackHitbox.debugDrawHitbox(WHITE);
+        //     }
+        // }
     // Add other attack types here as needed
 }
 
