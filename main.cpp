@@ -39,10 +39,11 @@ int main()
     credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
     // back button object, returns to previous menu
     FEHIcon::Icon backButton;
-    backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
+
     // program loop, never exit
     while(1){
-
+        // set the back button to have text "Back"
+    backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
    
     // menu loop  
     while(1){
