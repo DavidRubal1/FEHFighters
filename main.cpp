@@ -15,6 +15,8 @@
 // David Rubal and Charlie Limbert
 
 
+
+
 int main()
 {
     int frameTimeMilliseconds = 20; // time between frames in milliseconds
@@ -25,6 +27,12 @@ int main()
     // Background image
     FEHImage MenuArt;
     MenuArt.Open("./MenuArt/MenuKeyArt.png");
+    // still images for characters to display during countdown and during mode select
+    FEHImage RedCountdown;
+    RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
+    FEHImage BlueCountdown;
+    BlueCountdown.Open("./PlayerBlue/Left/Idle/Idle0.png");
+    
     // start button object, breaks to gameplay
     FEHIcon::Icon startButton;
     startButton.SetProperties("Play", 93, 60, 146, 30, WHITE, WHITE);
@@ -39,14 +47,22 @@ int main()
     credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
     // back button object, returns to previous menu
     FEHIcon::Icon backButton;
-
+    FEHIcon::Icon singlePlayerButton;
+    singlePlayerButton. SetProperties("Single Player",80, 100, 158, 30, WHITE, WHITE);
+    FEHIcon::Icon multiplayerButton;
+    multiplayerButton.SetProperties("Two Player", 80, 160, 158, 30, WHITE, WHITE);
+    bool singlePlayerMode;
+    bool gameStarted = false;
     // program loop, never exit
     while(1){
     // set the back button to have text "Back"
     backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
    
-    // menu loop  
+    // menu proper loop, allows for user to return back to the menu after 
+    // selecting play but without selecting a mode
     while(1){
+        // menu inner loop
+        while(1){
         // display main menu and title
         MenuArt.Draw(0, 0);
         LCD.SetFontScale(1.5);
@@ -143,7 +159,7 @@ int main()
                 LCD.WriteRC("Charlie Limbert", 12, 18);
                 LCD.WriteRC("Art Created Using:", 13, 18);
                 LCD.WriteRC("Piskel (piskelapp.com)", 14, 18);
-                LCD.WriteRC("Pixilart (pixilart.com)", 14, 19);
+                LCD.WriteRC("Pixilart (pixilart.com)", 15, 19);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
@@ -155,14 +171,59 @@ int main()
         }
         Sleep(frameTimeMilliseconds);
         LCD.Update();
+        }
+        while(1){
+        MenuArt.Draw(0,0);
+        singlePlayerButton.Draw();
+        multiplayerButton.Draw();
+        LCD.SetFontScale(1.5);
+        LCD.SetFontColor(WHITE);
+        LCD.WriteAt("FEH Fighters", 10, 10);
+        LCD.DrawHorizontalLine(38, 3, 190);
+        LCD.SetFontScale(1);
+        RedCountdown.Draw(150, 80);
+        RedCountdown.Draw(140, 140);
+        BlueCountdown.Draw(160, 140);
+        LCD.WriteAt("Choose a Mode", 82, 50);
+        backButton.Draw();
+        LCD.Update();
+        float x, y;
+        while(!LCD.Touch(&x,&y)) {};
+        if(backButton.Pressed(x, y, 0)){
+            break;
+        }
+        if(singlePlayerButton.Pressed(x, y, 0)){
+            singlePlayerMode = true;
+            gameStarted = true;
+            break;
+        }
+        if(multiplayerButton.Pressed(x,y,0)){
+            singlePlayerMode = false;
+            gameStarted = true;
+            break;
+        }
     }
+    // start the game if the a mode has been selected.
+    // return to the main menu otherwise
+    if(gameStarted){
+        break;
+    }
+    }
+    
+
     /* written by David Rubal*/
     // create both player objects
     // Player 1 is the red character. Player 1 can move with WASD and attack with XCV.
     // Player 2 is the blue character. Player 2 can move with the Arrow Keys and attack with IOP.
     // the player 1 and player 2 objects are to be controlled by two separate people in competition 
-    player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
-    player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
+
+    
+
+    player Player1(false, KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
+    player Player2(singlePlayerMode, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
+
+    
+
 
     // create FEHImage objects for each background element
     // background art
@@ -177,11 +238,7 @@ int main()
     // change back button to an "X"
     backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
-    // still images for characters to display during countdown
-    FEHImage RedCountdown;
-    RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
-    FEHImage BlueCountdown;
-    BlueCountdown.Open("./PlayerBlue/Left/Idle/Idle0.png");
+
 
 
     // set player damage to 0 before game starts
@@ -302,6 +359,9 @@ int main()
         Player1.updateTimers();
 
         // perform the same player functions above for player2
+        if(singlePlayerMode){
+            Player2.determineAIDecisions(&Player1);
+        }
         Player2.generalPlayerMovementControl();
         Player2.enactPlayerMovement();
         Player2.action();

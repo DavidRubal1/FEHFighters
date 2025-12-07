@@ -73,10 +73,10 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
         case 0: // punch
         damage = 5.0;
         knockback = 5.0;
-        angle = .82;
+        angle = .89;
         KBscaling = 1.0;
-        hitstunFramesBase = 12;
-        hitstunScaling = 0.2;
+        hitstunFramesBase = 6;
+        hitstunScaling = 0.22;
         break;
         case 1: // kick
         damage = 8.5;

@@ -1,6 +1,6 @@
 class player{
     public:
-        player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
+        player(bool AI, Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
         void generalPlayerMovementControl();
         void dash(int direction);
         void jump();
@@ -23,9 +23,34 @@ class player{
         int remainingLives = 3;
         bool gameOver = false;
 
+        std::vector<int> getXYPosition();
+
+        void determineAIDecisions(player *humanPlayer);
+
+
     private:
         // player attributes
         /*written by Charlie Limbert and David Rubal*/
+
+        //flag for if the player is controlled by an AI
+        bool isAI = false;
+        // identifiers for the choices the AI makes
+        // Horizonal direction (left/right) that the AI wants to move in.
+        // -2 indicates that the current player object is not an AI and should fail all checks
+        // -1 indicates  that the AI does not want to use that option
+        // 0 indicates left and 1 indicates right
+        int AIHorizontalDirection = -2;
+        // vertical direction (jump/crouch) that the AI wants to move in
+        // 0 = crouch, 1 = jump
+        int AIVerticalDirection = -2;
+        // Attack choice that the AI makes.
+        // 0 = punch, 1 = kick, 2 = projectile cast
+        int AIAttack = -2;
+        timer AIReactionTimer;
+        // position that the AI is trying to move towards
+        int targetX, targetY;
+        int safeRangeX, safeRangeY;
+        int projectileRange;
 
         // position
         int startingPosX, startingPosY;
@@ -116,7 +141,7 @@ class player{
 
         // controls
         //movement keys followed by attack keys
-        Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
+        Key left, right, up, down, basic, kick, projectile;
         // damage value of player, increased damage means increased knockback taken
         float damage = 0;
         // timers for hitstun and intangibility when respawning
@@ -158,7 +183,7 @@ class player{
 // constructs player hitbox object, constructs the four attack objects with ID, size and position offset,
 // and constructs the animator objects that will play the player's animations
 /* written by David Rubal*/
-player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
+player::player(bool AI, Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
     punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 5, 3, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
@@ -174,6 +199,10 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     kick = kickAttack;
     projectile = projectileAttack;
     playerColor = color;
+    isAI = AI;
+    if(AI){
+        AIReactionTimer.changeTimerMax(11);
+    }
     if(color == BLUE){
         direction = -1; // Blue starts facing left
     }else{
@@ -194,6 +223,7 @@ player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key ba
     projectileCastAnimation.looping = false;
 }
 
+
 // returns a copy of the player's hitbox
 /* written by David Rubal*/
 hitbox player::getHitbox(){
@@ -204,6 +234,11 @@ hitbox player::getHitbox(){
 float player::getDamage(){
     return damage;
 }
+
+ std::vector<int> player::getXYPosition(){
+    return {positionX, positionY};
+ }
+
 
 
 // enact knockback and hitstun on player when hit, and increase damage counter
@@ -284,6 +319,7 @@ timer player::getIntangibilityTimer(){
     return respawnIntangibleTimer;
 }
 
+
 // determines the current animation for the player and plays it
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
@@ -297,10 +333,11 @@ void player::playAnimations(){
                 // if standing on ground
                 if(grounded){
                     // if holding left or right and not crouch but not both left and right
-                    if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){ 
+                    if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
+                        || AIHorizontalDirection > -1){ 
                         // Dash animation
                         playerAnimator.playAnimation(dashAnimation.fileName, positionX, positionY, direction, dashAnimation.finalFrameNum, 1, dashAnimation.looping, dashAnimation.ID);
-                    } else if(Keyboard.isPressed(down)){
+                    } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
                         // Crouch animation
                         playerAnimator.playAnimation(crouchAnimation.fileName, positionX, positionY, direction, crouchAnimation.finalFrameNum, 1, crouchAnimation.looping, crouchAnimation.ID);
                     }else{
@@ -322,7 +359,7 @@ void player::playAnimations(){
     }
     
     // play double jump animation
-    if(doubleJumpUsed && !hitstunTimer.isActive()){
+    if(doubleJumpUsed){
         doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
     }else{
         // resets the animator when player is grounded
@@ -397,6 +434,7 @@ void player::playAnimations(){
     }
 }
 
+
 // returns pointer to current attack
 /* written by David Rubal*/
 attack* player::getCurrentAttack(){
@@ -444,7 +482,6 @@ void player::manageHitboxes(player *otherPlayer){
     if(projectileProjectile.isActive()){
         checkAttackHits(otherPlayer, &projectileProjectile);
     }
-    
 }
 
 // check if the current attack overlaps with the other player and hit if true
@@ -503,7 +540,8 @@ void player::action(){
 
     if(!hitstunTimer.isActive()){
         // Detect button press (transition from not pressed to pressed)
-        bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile));
+        bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile)
+                                || AIAttack >= 0);
 
         //prevents holding of attacks.
         bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
@@ -512,18 +550,18 @@ void player::action(){
         // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
         if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
         {
-            if (Keyboard.isPressed(basic)) 
+            if (Keyboard.isPressed(basic) || AIAttack == 0) 
             {
                 currentAttackType = 0;// punch
                 punch.updateActiveState(true);
 
             }
-            else if (Keyboard.isPressed(kick))
+            else if (Keyboard.isPressed(kick) || AIAttack == 1)
             {
                 currentAttackType = 1; //kick
                 kickAttack.updateActiveState(true);
             }
-            else if (Keyboard.isPressed(projectile))
+            else if (Keyboard.isPressed(projectile) || AIAttack == 2)
             {
                 currentAttackType = 2; //projectile cast
                 projectileCast.updateActiveState(true);
@@ -556,11 +594,12 @@ void player::generalPlayerMovementControl(){
             // not in attack or endlag
             if(lagFrame <= 0 && !inAttackAnimation){
                 // if not crouching or holding both left and right
-                if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
+                if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
+                    || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
                     // if not right after a dash
                     if(!inDashLag){
                         // move left
-                        if(Keyboard.isPressed(left)){
+                        if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                             direction = -1;
                             if(velocityX >= 0){
                                 // dash if turning around or stationary
@@ -571,7 +610,7 @@ void player::generalPlayerMovementControl(){
                             }
                         }
                         // move right
-                        if(Keyboard.isPressed(right)){
+                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
                             direction = 1;
                             if(velocityX <= 0){
                                 dash(direction);
@@ -583,30 +622,30 @@ void player::generalPlayerMovementControl(){
                         }
                     }else{
                         // allow for changing direction faced mid-dash
-                        if(Keyboard.isPressed(right)){
+                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
                             direction = 1;
-                        }else if(Keyboard.isPressed(left)){
+                        }else if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                             direction = -1;
                         }
                     }
                 }
                 //jump when on ground
-                if(Keyboard.isPressed(up)){
+                if(Keyboard.isPressed(up) || AIVerticalDirection == 1){
                     jump();
                 }
             }
         }else{ 
             // airborne movement (grouded == false)
             if(!Keyboard.isPressed({left, right})){
-                if(Keyboard.isPressed(left)){
+                if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                     velocityX -= accelerationX * airspeedMod;
                 }
-                if(Keyboard.isPressed(right)){
+                if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
                     velocityX += accelerationX * airspeedMod;
                 }
             }
             // fast fall when down is pressed
-            if(Keyboard.isPressed(down) && !inJumpLag){
+            if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !inJumpLag){
                 // increase gravity for fast fall
                 gravity = fastFallGravity;
                 inFastFall = true;
@@ -614,7 +653,7 @@ void player::generalPlayerMovementControl(){
             // if not in lag or in an attack
             if(lagFrame <= 0 && !inAttackAnimation){
                 // use double jump when jumping in air
-                if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
+                if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
                     inFastFall = false;
                     //increase gravity
                     gravity = tempGravity;
@@ -626,11 +665,11 @@ void player::generalPlayerMovementControl(){
                     doubleJumpY = positionY + hitboxHeight - 1;
                     // give a burst of speed in held direction
                     if(!Keyboard.isPressed({left, right})){
-                        if(Keyboard.isPressed(left)){
+                        if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                             direction = -1;
                             velocityX = 2.0 * direction;
                         }
-                        if(Keyboard.isPressed(right)){
+                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
                             direction = 1;
                             velocityX = 2.0 * direction;  
                         }
@@ -675,7 +714,7 @@ void player::enactPlayerMovement(){
     // if the player is not in hitstun
     if(!hitstunTimer.isActive()){
         // decay X-velocity exponentially when not moving horizontally
-        if(grounded && Keyboard.isPressed(down) || !Keyboard.areAnyPressed({left,right}) || inAttackAnimation){
+        if(grounded && (Keyboard.isPressed(down) || AIVerticalDirection == 0) || ( !isAI && !Keyboard.areAnyPressed({left,right}) || AIHorizontalDirection == -1)  || inAttackAnimation){
             velocityX *= pow(velocityXDecay, abs(velocityX));
         }else{
             // the player is moving, do not decay speed until movement has stopped
@@ -719,7 +758,7 @@ void player::enactPlayerMovement(){
         groundPlayer(180);
 
     }
-    if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 152)  && !Keyboard.isPressed(down)){
+    if((positionX + hitboxLength>= 106 && positionX <= 213) && velocityY >= 0 && (positionY + hitboxHeight >= 140 && positionY + hitboxHeight <= 152)  && ( (!isAI && !Keyboard.isPressed(down)) || (isAI && AIVerticalDirection != 0))){
         // Player has landed on the upper platform
         // reset grounded state
         groundPlayer(140);
@@ -727,4 +766,92 @@ void player::enactPlayerMovement(){
     
     // update hitbox position to follow player position
     playerHitbox.updateHitbox(positionX, positionY);
+}
+
+// determines the actions of the ai player for the current frame given the human player's position
+void player::determineAIDecisions(player *humanPlayer){
+    std::vector<int> p1Position = (*humanPlayer).getXYPosition();
+    AIHorizontalDirection = -1;
+    AIVerticalDirection = -1;
+    AIAttack = -1;
+    safeRangeX = 15;
+    safeRangeY = 30;
+    projectileRange = 50;
+    int randomness = rand() % 30;
+    int playerX = p1Position.at(0);
+    int playerY = p1Position.at(1);
+    int distanceToPlayerX = positionX - playerX;
+    int distanceToPlayerY = positionY - playerY;
+    AIReactionTimer.updateTimerState();
+    if(AIReactionTimer.getCurrentTimerTime() == 0){
+        targetX = playerX;
+        targetY = playerY;
+    }
+    if((*humanPlayer).inAttackAnimation && !AIReactionTimer.isActive()){
+        if((*humanPlayer).getCurrentAttack()->getAttackType() < 2){
+            if(distanceToPlayerX > 0){
+                targetX = targetX + safeRangeX;
+            }else{
+                targetX = targetX - safeRangeX;
+            }
+        }
+        if(grounded && (*humanPlayer).getCurrentAttack()->getAttackType() == 2){
+            // avoid the y-level that the projectile was fired from
+            if(playerY > 150){
+                targetY = 130;
+            }
+        }
+    }
+    
+
+
+    if(targetY == 140){
+        targetX = 160;
+    }
+
+    if(positionX > targetX + safeRangeX){
+        AIHorizontalDirection = 0;
+    }else if(positionX <= targetX - safeRangeX){
+         AIHorizontalDirection = 1;
+    }else{
+        if(direction == -1){
+            AIHorizontalDirection = 0;
+        }else{
+            AIHorizontalDirection = direction;
+        }
+    }
+    if(positionY < targetY - safeRangeY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
+        AIVerticalDirection = 0;
+    }else if(!inJumpLag && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
+        AIVerticalDirection = 1;
+    }
+
+    if(abs(distanceToPlayerX) < safeRangeX ){
+        if((*humanPlayer).getDamage() < 40 && randomness < 25){
+            AIAttack = 0;
+        }else{
+            AIAttack = 1;
+        }
+    }else if(abs(distanceToPlayerX) > projectileRange && distanceToPlayerY < safeRangeY && randomness == 1){
+        AIAttack = 2;
+    }
+
+    // survival instincts come last to override any other choices
+    if(positionX < 50){
+        AIHorizontalDirection = 1;
+        AIAttack = -1;
+    }
+    else if(positionX > 263){
+        AIHorizontalDirection = 0;
+        AIAttack = -1;
+    }
+    if(positionY > 180){
+        AIVerticalDirection = 1;
+        AIAttack = -1;
+    }
+    AIReactionTimer.incrementTimer();
+    if(!AIReactionTimer.isActive()){
+        AIReactionTimer.resetTimer();
+    }
+    
 }
