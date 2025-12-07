@@ -42,7 +42,7 @@ int main()
 
     // program loop, never exit
     while(1){
-        // set the back button to have text "Back"
+    // set the back button to have text "Back"
     backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
    
     // menu loop  
@@ -141,6 +141,9 @@ int main()
                 LCD.WriteRC("Developers:", 10, 18);
                 LCD.WriteRC("David Rubal", 11, 18);
                 LCD.WriteRC("Charlie Limbert", 12, 18);
+                LCD.WriteRC("Art Created Using:", 13, 18);
+                LCD.WriteRC("Piskel (piskelapp.com)", 14, 18);
+                LCD.WriteRC("Pixilart (pixilart.com)", 14, 19);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
