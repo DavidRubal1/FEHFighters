@@ -30,13 +30,13 @@ class player{
         // position
         int startingPosX, startingPosY;
         int positionX = 100, positionY = 180;
-        // player size
+        // player hitbox (and sprite) size
         int hitboxHeight = 20, hitboxLength = 14;
 
         // player color
         int playerColor;
 
-        // hitbox for player
+        // hitbox for player, handles ground collisions and for overlap with enemy attacks
         hitbox playerHitbox;
 
         //attack objects
@@ -52,59 +52,77 @@ class player{
 
         // grounded speed variables
         float accelerationX = 1.05;
+        // speed multiplier when dashing
         float dashSpeedMod = 2;
+        // maximum running speed
         float runSpeedMax = 3;
+        // velocity decay when not holding a movement key
         float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
+        // velocity decay when in dash
         float velocityXDecayDash = 0.95;
 
-        // grounded state
+        // grounded state, is true when the player is standing on the ground or the platform
         bool grounded = true;
 
         // airborne info
+        // x-velocity multiplier when the player is in the air
         float airspeedMod = 0.6;
+        // flag to keep track of whether the player has used double jump
         bool doubleJumpUsed = false;
 
         // dash variables
         bool inDashLag = false;
+        // keeps track of time spent in a dash
         float dashLagTimerMax = 4;
         float dashLagTimer = 0;
         
-        // movment animation types and animation player 
+        // animation player to draw the player's sprites for any given animation
         animation playerAnimator;
+        // animation type info for movement animations, info is passed through the animation player
         animationType idleAnimation = {"/Idle/Idle", 1, true, 0, 30};
         animationType dashAnimation = {"/Dash/Dash", 8, true, 1};
         animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
 
-        // attack animations
+        // animation types for attack animations, info is passed through animation player
         animationType punchAnimation;
         animationType kickAnimation;
         animationType projectileCastAnimation;
 
-        // separate animator and animation type for double jump
+        // separate animator and animation type for double jump to allow for another animation to play during double jump
         animation doubleJumpAnimator;
         animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
         // position of double jump
         int doubleJumpX, doubleJumpY;
 
         //jump variables
+        // change in y-velocity when jumping
         float jumpForce = 6;
+        // flag to keep track of whether the player has just jumped, used to prevent double jump from being instantly used
         bool inJumpLag = false;
         float jumpLagTimerMax = 3;
         float jumpLagTimer = 0;
 
         // gravity
+        // gravity during fast fall
         float fastFallGravity = 0.20;
+        // flag to tell if the player is in "fast fall", which increases their gravity
         bool inFastFall = false;
+        // normal gravity
         float gravity = 0.08, tempGravity = 0.08;
+        // downwards force applied each frame
         float currentGravityForce = 0, groundedGravityForce = 0.3;
+        // terminal velocity
         float maxGravityForce = 1.2;
 
         // controls
+        //movement keys followed by attack keys
         Key left = KEY_A, right = KEY_D, up = KEY_W,  down = KEY_S, basic = KEY_T, kick = KEY_R, projectile = KEY_Y;
-        // damage number
+        // damage value of player, increased damage means increased knockback taken
         float damage = 0;
         // timers for hitstun and intangibility when respawning
+        // hitstun prevents the player from acting after getting hit
         timer hitstunTimer;
+        // makes the player invincible for a short period after dying
         timer respawnIntangibleTimer;
         
         // attack animation variables
@@ -118,6 +136,7 @@ class player{
         
         // Frame timing arrays for each attack (in number of frames)
         // punch: frames 0-4 timing, etc.
+        // describes how long each frame of animation will last for
         int FrameTiming[3][5] = 
         {
             {1, 1, 2, 2, 3}, // punch
@@ -135,7 +154,10 @@ class player{
         bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
 };
 
-// constructor for player
+// constructor for player. Assigns each movement and attack key, starting position, player color,
+// constructs player hitbox object, constructs the four attack objects with ID, size and position offset,
+// and constructs the animator objects that will play the player's animations
+/* written by David Rubal*/
 player::player(Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
     punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 5, 3, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
@@ -210,14 +232,16 @@ void player::getHit(attack* activeAttack){
 // move and draw projectile
 /* written by David Rubal*/
 void player::updateProjectile(){
+    // change projectile position by the projectile's velocity
     projectileProjectile.moveProjectile(projectileProjectile.getXVelocity());
+    // draw projectile
     projectileProjectile.playProjectileAnimation(playerColor);
 }
 
 // increments timers and updates the player state accordingly
 /*written by Charlie Limbert and David Rubal*/
 void player::updateTimers(){
-    // dash lag timer
+    // dash lag timer, keeps track of when the player started a dash
     if(inDashLag){
         dashLagTimer++;
         if(dashLagTimer >= dashLagTimerMax){
@@ -234,11 +258,11 @@ void player::updateTimers(){
             jumpLagTimer = 0;
         }
     }
-    // lagFrame timer
+    // lagFrame timer, prevents the player from acting after attacking
     if(lagFrame > 0){
         lagFrame--;
     }
-    // hitstun timer
+    // hitstun timer, prevents the player from acting after being attacked
     if(hitstunTimer.isActive()){
         hitstunTimer.incrementTimer();
         if(velocityY > 2.0){
@@ -247,7 +271,7 @@ void player::updateTimers(){
             hitstunTimer.updateTimerState();
         }
     }
-    // respawn intangibility timer
+    // respawn intangibility timer, provided invincibility after respawn
     if(respawnIntangibleTimer.isActive()){
         respawnIntangibleTimer.incrementTimer();
         respawnIntangibleTimer.updateTimerState();
@@ -264,17 +288,23 @@ timer player::getIntangibilityTimer(){
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
     // written by David rubal
+    // if not in hitstun
     if(!hitstunTimer.isActive()){
+        // if not attacking
         if(!inAttackAnimation){
+            // if not in attack lag
             if(lagFrame == 0){
+                // if standing on ground
                 if(grounded){
-                    if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){  //dash right
+                    // if holding left or right and not crouch but not both left and right
+                    if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))){ 
                         // Dash animation
                         playerAnimator.playAnimation(dashAnimation.fileName, positionX, positionY, direction, dashAnimation.finalFrameNum, 1, dashAnimation.looping, dashAnimation.ID);
                     } else if(Keyboard.isPressed(down)){
                         // Crouch animation
                         playerAnimator.playAnimation(crouchAnimation.fileName, positionX, positionY, direction, crouchAnimation.finalFrameNum, 1, crouchAnimation.looping, crouchAnimation.ID);
                     }else{
+                        // idle animation
                         playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
                     }
                 }else{
@@ -295,6 +325,7 @@ void player::playAnimations(){
     if(doubleJumpUsed && !hitstunTimer.isActive()){
         doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
     }else{
+        // resets the animator when player is grounded
         doubleJumpAnimator.resetTimer();
     }
     
@@ -302,15 +333,15 @@ void player::playAnimations(){
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
     if(inAttackAnimation && !hitstunTimer.isActive()){
         char filePath[64];
-        
         // Calculate total animation duration by summing all frame timings
         int totalDuration = 0;
         for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
         {
             totalDuration += FrameTiming[currentAttackType][i];
         }
-        // change this to work with other attacks as well
+        // gets the current attack animation type, used to play attack animation
         animationType* currentAttackAnimation = getCurrentAttackAnimation();
+        // total number of frames in attack animation
         (*currentAttackAnimation).finalFrameNum = totalDuration;
 
         // Determine current frame based on timer
@@ -322,12 +353,14 @@ void player::playAnimations(){
             //determines what frame the attack animation is on
             if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
             {
+                //gets the length of the current animation frame
                 (*currentAttackAnimation).frameLength = FrameTiming[currentAttackType][i];
                 attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
                 break;
             }
             elapsedTime += FrameTiming[currentAttackType][i];
         }
+        // offsets the attack by a certain amount to align the animation with the player's hitbox
         int offsetPositionX, offsetPositionY;
         if(direction == -1){
             offsetPositionX = positionX-11;
@@ -335,6 +368,7 @@ void player::playAnimations(){
             offsetPositionX = positionX;
         }
         offsetPositionY = positionY;
+        // plays the attack animation
         playerAnimator.playAnimation((*currentAttackAnimation).fileName, offsetPositionX, offsetPositionY, direction, (*currentAttackAnimation).finalFrameNum, (*currentAttackAnimation).frameLength, (*currentAttackAnimation).looping, (*currentAttackAnimation).ID); 
     
         // Update attack animation
@@ -354,13 +388,12 @@ void player::playAnimations(){
             attackAnimationTimer = 0;
             attackHitboxActive = false;
         }else{
-            // create separate projectile after casting
+            // create separate projectile after casting, only allow one
             if(currentAttackType == 2 && attackAnimationTimer == 19){
                 projectileProjectile.updateAttackPosition(positionX, positionY, direction, true);
                 projectileProjectile.updateActiveState(true);
             }
         }
-
     }
 }
 
@@ -400,13 +433,14 @@ animationType* player::getCurrentAttackAnimation(){
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
     if(currentAttackType != -1){
+        // gets the current attack to update position and check for overlap with other player
         attack* currentAttack = getCurrentAttack();
         (*currentAttack).updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
-        // TODO: the attack is only active on the last frame now
         if(attackHitboxActive){
             checkAttackHits(otherPlayer, currentAttack);
         }
     }
+    // checks for projectile overlap with other player, separate because projectiles have separate movement
     if(projectileProjectile.isActive()){
         checkAttackHits(otherPlayer, &projectileProjectile);
     }
@@ -416,9 +450,11 @@ void player::manageHitboxes(player *otherPlayer){
 // check if the current attack overlaps with the other player and hit if true
 /* written by David Rubal*/
 void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
+    // if the other player is not intangible, the current attack is active, and the attack collides with the other player
         if(!(*otherPlayer).getIntangibilityTimer().isActive() && (*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
+            // the other player takes the hit
             (*otherPlayer).getHit(activeAttack);
-            // disable attack to prevent attack from hitting multiple times in consecutive frames
+            // disable attack to prevent attack from hitting multiple times in the following active frames
             (*activeAttack).updateActiveState(false);
         }
 }
@@ -433,14 +469,14 @@ void player::resetIfOffscreen(){
         respawnIntangibleTimer.changeTimerMax(30);
         // resets position, velocity, and damage
         positionX = startingPosX;
-        positionY = startingPosY -10;
+        positionY = startingPosY -10; // player starts slightly above starting position
         velocityX = 0;
         velocityY = 0;
         damage = 0;
         remainingLives--; // jump lag to prevent instant double jump after respawning
         inJumpLag = true;
 
-        // checks for game over
+        // checks for game over when a player has run out of lives
         if (remainingLives == 0)
         {
             gameOver = true;
@@ -451,12 +487,14 @@ void player::resetIfOffscreen(){
 // give the player a dash of speed in the direction
 /* written by David Rubal*/
 void player::dash(int direction){
+    // increase x-velocity
     velocityX = direction * runSpeedMax * 0.9;
     inDashLag = true;
+    // decrease velocity decay for sliding
     velocityXDecay = velocityXDecayDash;
 }
 
-// get input for attacks
+// get input for attacks and activate the respective attack 
 /*coded by Charlie Limbert*/
 void player::action(){
     if(projectileProjectile.isActive()){
@@ -487,7 +525,7 @@ void player::action(){
             }
             else if (Keyboard.isPressed(projectile))
             {
-                currentAttackType = 2; //projectile
+                currentAttackType = 2; //projectile cast
                 projectileCast.updateActiveState(true);
             }
             inAttackAnimation = true;  //indicates attack animation is being played 
@@ -501,7 +539,9 @@ void player::action(){
 // the player jumps
 /* written by David Rubal*/
 void player::jump(){
+    // reset downwards force
     currentGravityForce = 0;
+    // decrease y-velocity (decrease means upwards motion)
     velocityY -= jumpForce;
     inJumpLag = true;
 }
@@ -509,12 +549,15 @@ void player::jump(){
 // general input handler for player movement
 /* written by David Rubal*/
 void player::generalPlayerMovementControl(){
+    // if not in hitstun, allow movement inputs
     if(!hitstunTimer.isActive()){
         // grounded movement
         if(grounded){
             // not in attack or endlag
             if(lagFrame <= 0 && !inAttackAnimation){
+                // if not crouching or holding both left and right
                 if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})){
+                    // if not right after a dash
                     if(!inDashLag){
                         // move left
                         if(Keyboard.isPressed(left)){
@@ -523,6 +566,7 @@ void player::generalPlayerMovementControl(){
                                 // dash if turning around or stationary
                                 dash(direction);
                             }else{
+                                // continue left
                                 velocityX -= accelerationX;
                             }
                         }
@@ -532,6 +576,7 @@ void player::generalPlayerMovementControl(){
                             if(velocityX <= 0){
                                 dash(direction);
                             }else{
+                                // continue right
                                 velocityX += accelerationX;
                             }
                             
@@ -566,15 +611,16 @@ void player::generalPlayerMovementControl(){
                 gravity = fastFallGravity;
                 inFastFall = true;
             }
-            // use double jump when jumping in air
+            // if not in lag or in an attack
             if(lagFrame <= 0 && !inAttackAnimation){
+                // use double jump when jumping in air
                 if(Keyboard.isPressed(up) && !doubleJumpUsed && !inJumpLag){
                     inFastFall = false;
                     //increase gravity
                     gravity = tempGravity;
                     doubleJumpUsed = true;
                     currentGravityForce = 0;
-                    velocityY =- (jumpForce-1);
+                    velocityY =- (jumpForce-1); // double jump is slightly weaker than regular jump
                     // save position to use for double jump rings animation
                     doubleJumpX = positionX - 3;
                     doubleJumpY = positionY + hitboxHeight - 1;
@@ -610,7 +656,7 @@ void player::groundPlayer(int groundYLevel){
     currentGravityForce = groundedGravityForce;
     // reset velocity
     velocityY = 0;
-    // set position alinged with ground
+    // set position aligned with ground
     positionY = groundYLevel - hitboxHeight;
 }
 
@@ -626,13 +672,13 @@ void player::enactPlayerMovement(){
     if(grounded && abs(velocityX) < 1){
         velocityX = 0;
     }
-
+    // if the player is not in hitstun
     if(!hitstunTimer.isActive()){
-            // decay X-velocity exponentially when not moving horizontally
-            // THIS DOES NOT WORK WHEN HOLDING CROUCH
+        // decay X-velocity exponentially when not moving horizontally
         if(grounded && Keyboard.isPressed(down) || !Keyboard.areAnyPressed({left,right}) || inAttackAnimation){
             velocityX *= pow(velocityXDecay, abs(velocityX));
         }else{
+            // the player is moving, do not decay speed until movement has stopped
             if(velocityX > runSpeedMax){
                 velocityX = runSpeedMax;
             }else if(velocityX < (runSpeedMax * -1)){
@@ -644,7 +690,7 @@ void player::enactPlayerMovement(){
         velocityX *= velocityXDecay;
     }
 
-    // custom-bake conditions to fit the dimensions of the platforms for collisions
+    // custom-baked conditions to fit the dimensions of the platforms for collisions
     if(positionY < 180 - hitboxHeight || (positionX <= 50 - hitboxLength || positionX >= 263)){
         // player is in the air
         grounded = false;
@@ -663,7 +709,7 @@ void player::enactPlayerMovement(){
             positionX = 263;
             velocityX = 0;
         }else{  
-            positionY = 180;
+            positionY = 180; // player has fallen inside the stage, reset position
             velocityY = 0;
         }
     }

@@ -27,15 +27,22 @@ class attack {
         int direction;   // -1 = left, 1 = right
         int positionX;
         int positionY;
-        int offX, offY;
-        int playerHitboxLength = 14;
-        // attack properties
+        int offX, offY; // given offsets for attack positions
+        int playerHitboxLength = 14; // used to offset attack position
+
+        // how much damage the attack deals
         float damage;
+        // base amount of how much the attack will launch the opponent away
         float knockback;
+        // angle of knockback
         float angle;
+        // how much the knockback scale with the other player's damage
         float KBscaling;
+        // how many frames of hitstun the opponent will be subjected to 
         int hitstunFramesBase;
+        // how much the opponent's damage will increase the hitstun they recieve
         float hitstunScaling;
+
         // projectile speed variables
         float velocityX;
         float velocityY;
@@ -61,6 +68,7 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
     this->hitboxLength = hitLength;
     this->offX = offsetX;
     this->offY = offsetY;
+    // define the qualities of the attack based on its type
     switch(attackType){
         case 0: // punch
         damage = 5.0;
@@ -166,12 +174,13 @@ float attack::getXVelocity(){
 // Update the position of the attack
 /*coded by Charlie Limbert*/
 void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
-    printf("PosX Start: %d\n", posX);
+    // moves the attack's position to be an certain distance away from the player
     if(dir == 1){
         this->positionX = posX + playerHitboxLength - offX;
     }else{
         this->positionX = posX - hitboxLength + offX;
     }
+    // apply y-offset
     this->positionY = posY + offY;
     this->direction = dir;
     updateAttackHitbox(attackHitboxActive);
@@ -186,10 +195,12 @@ void attack::moveProjectile(float velX){
     }
 }
 
+// changes the active state of the attack to the parameter's state
 void attack::updateActiveState(bool state){
     active = state;
 }
 
+// returns whether this attack is active
 bool attack::isActive(){
     return active;
 }
@@ -199,10 +210,10 @@ bool attack::isActive(){
 void attack::updateAttackHitbox(bool attackHitboxActive){
 
         if(direction == -1){
-            // punch extends to the left
+            // attack extends to the left
             attackHitbox.updateHitbox(positionX, positionY);
         } else {
-            // punch extends to the right
+            // attack extends to the right
             attackHitbox.updateHitbox(positionX, positionY);
         }
         // debug code for viewing active attack hitboxes
@@ -214,11 +225,9 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
         //         attackHitbox.debugDrawHitbox(WHITE);
         //     }
         // }
-    // Add other attack types here as needed
 }
 
-// Check if this attack collides with another hitbox
+// Check if this attack collides with another hitbox, used for testing player collison with attacks
 bool attack::checkCollision(hitbox otherHitbox){
     return attackHitbox.rectangleIntersects(otherHitbox);
-
 }

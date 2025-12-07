@@ -22,16 +22,22 @@ int main()
     int numGames = 0, redWins = 0, blueWins = 0; 
     //Menu Objects
     /* menu coded by David Rubal*/
+    // Background image
     FEHImage MenuArt;
     MenuArt.Open("./MenuArt/MenuKeyArt.png");
+    // start button object, breaks to gameplay
     FEHIcon::Icon startButton;
     startButton.SetProperties("Play", 93, 60, 146, 30, WHITE, WHITE);
+    // stats button object, goes to stats menu
     FEHIcon::Icon statsButton;
     statsButton.SetProperties("Statistics", 93, 90, 146, 30, WHITE, WHITE);
+    // instructions button object, goes to instructions menu
     FEHIcon::Icon instructions;
     instructions.SetProperties("How to Play", 93, 120, 146, 30, WHITE, WHITE);
+    // credits button object, goes to credits menu
     FEHIcon::Icon credits;
     credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
+    // back button object, returns to previous menu
     FEHIcon::Icon backButton;
     backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
     // program loop, never exit
@@ -40,7 +46,7 @@ int main()
    
     // menu loop  
     while(1){
-        // display main menu
+        // display main menu and title
         MenuArt.Draw(0, 0);
         LCD.SetFontScale(1.5);
         LCD.SetFontColor(WHITE);
@@ -53,7 +59,7 @@ int main()
         statsButton.Draw();
         instructions.Draw();
         credits.Draw();
-
+        // wait for a button to be pressed
         float x, y;
         while(!LCD.Touch(&x,&y)) {};
         if(startButton.Pressed(x, y, 0)){
@@ -148,20 +154,26 @@ int main()
     }
     /* written by David Rubal*/
     // create both player objects
+    // Player 1 is the red character. Player 1 can move with WASD and attack with XCV.
+    // Player 2 is the blue character. Player 2 can move with the Arrow Keys and attack with IOP.
+    // the player 1 and player 2 objects are to be controlled by two separate people in competition 
     player Player1(KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
     player Player2(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
 
     // create FEHImage objects for each background element
+    // background art
     FEHImage background;
     background.Open("./Background/FEHBackgroundVer3.png");
+    // red diamond image
     FEHImage RedUI;
     RedUI.Open("./UI/RedUI.png");
+    // blue diamond image
     FEHImage BlueUI;
     BlueUI.Open("./UI/BlueUI.png");
-    FEHIcon::Icon backButton;
+    // change back button to an "X"
     backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
-    // placeholder images for characters to display during countdown
+    // still images for characters to display during countdown
     FEHImage RedCountdown;
     RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
     FEHImage BlueCountdown;
@@ -285,8 +297,7 @@ int main()
         Player1.resetIfOffscreen();
         Player1.updateTimers();
 
-
-        // perform the same functions for player2
+        // perform the same player functions above for player2
         Player2.generalPlayerMovementControl();
         Player2.enactPlayerMovement();
         Player2.action();
@@ -297,6 +308,7 @@ int main()
 
         // draw the back button to exit mid-game
         backButton.Draw();
+        // exit the game if the back button is pressed
         float x, y;
         LCD.Touch(&x, &y);
         if(backButton.Pressed(x, y, 0)){
@@ -306,12 +318,14 @@ int main()
 
         // update frame
         LCD.Update();
+        // pause for the frame time
         Sleep(frameTimeMilliseconds);
 
         //checks if player 2 has run out of lives
         /*coded by Charlie Limbert*/
         if (Player2.gameOver)
         {
+            //display player 1 victory screen
             redWins++;
             numGames++;
             LCD.SetFontColor(BLACK);
@@ -329,6 +343,7 @@ int main()
         //checks if player 1 has run out of lives
         if (Player1.gameOver)
         {
+            //display player 2 victory screen
             blueWins++;
             numGames++;
             LCD.SetFontColor(BLACK);
