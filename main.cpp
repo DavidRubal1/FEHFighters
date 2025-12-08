@@ -159,7 +159,7 @@ int main()
                 LCD.WriteRC("Charlie Limbert", 12, 18);
                 LCD.WriteRC("Art Created Using:", 13, 18);
                 LCD.WriteRC("Piskel (piskelapp.com)", 14, 18);
-                LCD.WriteRC("Pixilart (pixilart.com)", 15, 19);
+                LCD.WriteRC("Pixilart (pixilart.com)", 15, 18);
                 LCD.Update();
                 float x1, y1;
                 while(!LCD.Touch(&x1,&y1)) {};
