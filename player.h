@@ -22,9 +22,7 @@ class player{
         float getDamage();
         int remainingLives = 3;
         bool gameOver = false;
-
         std::vector<int> getXYPosition();
-
         void determineAIDecisions(player *humanPlayer);
 
 
@@ -47,14 +45,17 @@ class player{
         // 0 = punch, 1 = kick, 2 = projectile cast
         int AIAttack = -2;
         timer AIReactionTimer;
-        // position that the AI is trying to move towards
+        // target coordinates detail the position that the AI is trying to move towards
         int targetX, targetY;
-        int safeRangeX, safeRangeY;
-        int projectileRange;
+        // ranges that the AI tries to stay out of around the player when they are attacking
+        int safeRangeX = 15;
+        int safeRangeY = 30;
+        // player distance at which the AI will start casting projectiles
+        int projectileRange = 50;
 
-        // position
+        // player position coordinates
         int startingPosX, startingPosY;
-        int positionX = 100, positionY = 180;
+        int positionX, positionY;
         // player hitbox (and sprite) size
         int hitboxHeight = 20, hitboxLength = 14;
 
@@ -64,15 +65,14 @@ class player{
         // hitbox for player, handles ground collisions and for overlap with enemy attacks
         hitbox playerHitbox;
 
-        //attack objects
+        //attack objects. these hold info for damage, knockback, etc. and have associated hitboxes
         attack punch;
         attack kickAttack;
         attack projectileCast;
         attack projectileProjectile;
 
-        // player speed and direction (-1 == left, 1 == right)
+        // player velocity in each axis and direction (-1 == left, 1 == right)
         float velocityX = 0, velocityY = 0;
-        int knockbackVelX, knockbackVelY;
         int direction;
 
         // grounded speed variables
@@ -235,6 +235,8 @@ float player::getDamage(){
     return damage;
 }
 
+// returns a 2d vector of the player's current xy position
+/* written by David Rubal*/
  std::vector<int> player::getXYPosition(){
     return {positionX, positionY};
  }
@@ -574,7 +576,7 @@ void player::action(){
     }
 }
 
-// the player jumps
+// the player jumps upwards
 /* written by David Rubal*/
 void player::jump(){
     // reset downwards force
@@ -675,7 +677,6 @@ void player::generalPlayerMovementControl(){
                         }
                     }
                 }
-
             }
         }
     }
@@ -769,24 +770,30 @@ void player::enactPlayerMovement(){
 }
 
 // determines the actions of the ai player for the current frame given the human player's position
+/* written by David Rubal */
 void player::determineAIDecisions(player *humanPlayer){
+    // stores both x and y coordinates of the human player in a vector
     std::vector<int> p1Position = (*humanPlayer).getXYPosition();
+    // resets each decision each frame, -1 means no action
     AIHorizontalDirection = -1;
     AIVerticalDirection = -1;
     AIAttack = -1;
-    safeRangeX = 15;
-    safeRangeY = 30;
-    projectileRange = 50;
+    // random value to base some decisions off of
     int randomness = rand() % 30;
+    // store both x and y variables into two ints
     int playerX = p1Position.at(0);
     int playerY = p1Position.at(1);
+    // determine the distance from the AI's current position with the player's current position
     int distanceToPlayerX = positionX - playerX;
     int distanceToPlayerY = positionY - playerY;
+    // update the reaction timer
     AIReactionTimer.updateTimerState();
+    // once every 12 frames, set the targeted position to the player's position
     if(AIReactionTimer.getCurrentTimerTime() == 0){
         targetX = playerX;
         targetY = playerY;
     }
+    // if the human player is attacking, see if the AI can react and move away out of the player's range
     if((*humanPlayer).inAttackAnimation && !AIReactionTimer.isActive()){
         if((*humanPlayer).getCurrentAttack()->getAttackType() < 2){
             if(distanceToPlayerX > 0){
@@ -795,6 +802,7 @@ void player::determineAIDecisions(player *humanPlayer){
                 targetX = targetX - safeRangeX;
             }
         }
+        // if the player is casting a projectile, jump to avoid it
         if(grounded && (*humanPlayer).getCurrentAttack()->getAttackType() == 2){
             // avoid the y-level that the projectile was fired from
             if(playerY > 150){
@@ -803,40 +811,46 @@ void player::determineAIDecisions(player *humanPlayer){
         }
     }
     
-
-
+    // if the targeted position is up at the platform, go towards the center of the platform
     if(targetY == 140){
         targetX = 160;
     }
-
+    // move towards the player until the AI has reached the safe range surrounding the player
     if(positionX > targetX + safeRangeX){
         AIHorizontalDirection = 0;
     }else if(positionX <= targetX - safeRangeX){
          AIHorizontalDirection = 1;
     }else{
+        // if the AI is within the player's range, keep moving in the current direction
         if(direction == -1){
             AIHorizontalDirection = 0;
         }else{
             AIHorizontalDirection = direction;
         }
     }
+    // if the player is above the AI by a substantial amount (determined by safeRangeY), jump to meet them
+    // otherwise, if the player is below the AI, crouch/fastfall to meet them
     if(positionY < targetY - safeRangeY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 0;
     }else if(!inJumpLag && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 1;
     }
-
+    // if the AI is within range of the player, attack
     if(abs(distanceToPlayerX) < safeRangeX ){
-        if((*humanPlayer).getDamage() < 40 && randomness < 25){
-            AIAttack = 0;
+        // perform a punch or a kick (less likely) if the player has less than 50 damage
+        // if they have more than 50 damage, kick only
+        if((*humanPlayer).getDamage() < 50 && randomness < 25){
+            AIAttack = 0; //punch
         }else{
-            AIAttack = 1;
+            AIAttack = 1; // kick
         }
+        // if the player is outside of the range determined by Projectile range, have a chance to cast a projectile
     }else if(abs(distanceToPlayerX) > projectileRange && distanceToPlayerY < safeRangeY && randomness == 1){
-        AIAttack = 2;
+        AIAttack = 2; //cast
     }
 
     // survival instincts come last to override any other choices
+    // these only happen if the AI is offstage
     if(positionX < 50){
         AIHorizontalDirection = 1;
         AIAttack = -1;
@@ -849,6 +863,7 @@ void player::determineAIDecisions(player *humanPlayer){
         AIVerticalDirection = 1;
         AIAttack = -1;
     }
+    //increment the reaction time
     AIReactionTimer.incrementTimer();
     if(!AIReactionTimer.isActive()){
         AIReactionTimer.resetTimer();

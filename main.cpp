@@ -172,6 +172,7 @@ int main()
         Sleep(frameTimeMilliseconds);
         LCD.Update();
         }
+        // display mode selection screen, allows for singleplayer or multiplayer
         while(1){
         MenuArt.Draw(0,0);
         singlePlayerButton.Draw();
@@ -215,14 +216,10 @@ int main()
     // create both player objects
     // Player 1 is the red character. Player 1 can move with WASD and attack with XCV.
     // Player 2 is the blue character. Player 2 can move with the Arrow Keys and attack with IOP.
-    // the player 1 and player 2 objects are to be controlled by two separate people in competition 
-
-    
-
+    // in multiplayer, player 1 and player 2 are to be controlled by two separate people in competition 
+    // if singleplayer is selected, player 2 is controlled by an AI
     player Player1(false, KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
     player Player2(singlePlayerMode, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
-
-    
 
 
     // create FEHImage objects for each background element
@@ -239,13 +236,11 @@ int main()
     backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
 
-
-
     // set player damage to 0 before game starts
     float p1Damage = 0.0, p2Damage = 0.0;
     LCD.SetFontScale(0.5);
     timer goTimer;
-    goTimer.changeTimerMax(30); // timer for 30 frames when "Go!" is displays
+    goTimer.changeTimerMax(30); // timer set to display "Go!" for 30 frames after the game has started
     goTimer.resetTimer();
 
     // game start countdown 
@@ -288,7 +283,7 @@ int main()
         // redraw UI
         RedUI.Draw(80, 200);
         BlueUI.Draw(201,200);
-        // game start countdown
+        //display "Go!" for as long as the goTimer is active
         if(goTimer.isActive()){
             LCD.SetFontScale(2);
             LCD.WriteAt("Go!", 130, 90);
@@ -359,7 +354,10 @@ int main()
         Player1.updateTimers();
 
         // perform the same player functions above for player2
+        // if single player mode is active, call a function to determine the actions that 
+        // player 2 takes. in multiplayer mode this is deactivated.
         if(singlePlayerMode){
+            // the player 1 object is sent in to allow the AI to see player 1's position
             Player2.determineAIDecisions(&Player1);
         }
         Player2.generalPlayerMovementControl();
@@ -372,7 +370,7 @@ int main()
 
         // draw the back button to exit mid-game
         backButton.Draw();
-        // exit the game if the back button is pressed
+        // exit the game if the back button is hovered
         float x, y;
         LCD.Touch(&x, &y);
         if(backButton.Pressed(x, y, 0)){
@@ -424,6 +422,7 @@ int main()
             Sleep(1000);
         }
     }
+    // reset font size for the menu
     LCD.SetFontScale(1);
 }
     return 0;
