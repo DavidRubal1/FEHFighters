@@ -445,9 +445,9 @@ void player::action(){
 
         //prevents holding of attacks.
         bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
-        AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
+        AttackPressedLastFrame = buttonPressed;  //store current frame's button state for next frame comparison
         
-        // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
+        //Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
         if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
         {
             if (Keyboard.isPressed(basic)) 

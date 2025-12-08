@@ -222,7 +222,7 @@ int main()
             
             debugColor = WHITE;
         }
-        Player1.getHitbox().debugDrawHitbox(debugColor); // debug
+        // Player1.getHitbox().debugDrawHitbox(debugColor); // debug
         Player1.resetIfOffscreen();
 
 
@@ -233,7 +233,7 @@ int main()
         Player2.manageHitboxes(&Player1);
         Player2.playAnimations();
         Player2.resetIfOffscreen();
-        Player2.getHitbox().debugDrawHitbox(WHITE);
+        //Player2.getHitbox().debugDrawHitbox(WHITE);
 
         
         backButton.Draw();
