@@ -502,7 +502,7 @@ void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
 /*coded by Charlie Limbert and David Rubal*/
 void player::resetIfOffscreen(){
     // if player position is off-screen
-    if(positionX < 0 || positionX > 319 || positionY > 239 || positionY < 0){
+    if(positionX < 0 - hitboxLength || positionX > 319 || positionY > 239 || positionY < 0 - hitboxHeight){
         // give intangibility towards incoming attacks when respawned
         respawnIntangibleTimer.resetTimer();
         respawnIntangibleTimer.changeTimerMax(30);
