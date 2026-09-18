@@ -10,7 +10,8 @@
 #include "animation.h" // uses timer.h
 #include "attack.h" // uses hitbox.h and animation.h
 #include "player.h" // uses hitbox.h, attack.h, and animation.h
-
+#include "screens.h"
+#include "data.h"
 // Team G25-26
 // David Rubal and Charlie Limbert
 
@@ -19,188 +20,78 @@ int main()
 {
     int frameTimeMilliseconds = 20; // time between frames in milliseconds
     // variables to keep track of wins and games
-    int numGames = 0, redWins = 0, blueWins = 0; 
+    data gameData;
     //Menu Objects
     /* menu coded by David Rubal*/
-    // Background image
-    FEHImage MenuArt;
-    MenuArt.Open("./graphics/Backgrounds/MenuKeyArt.png");
-    // still images for characters to display during countdown and during mode select
-    FEHImage RedCountdown;
-    RedCountdown.Open("./graphics/Animations/PlayerRed/Right/Idle/Idle0.png");
-    FEHImage BlueCountdown;
-    BlueCountdown.Open("./graphics/Animations/PlayerBlue/Left/Idle/Idle0.png");
+
     
-    // start button object, breaks to gameplay
-    FEHIcon::Icon startButton;
-    startButton.SetProperties("Play", 93, 60, 146, 30, WHITE, WHITE);
-    // stats button object, goes to stats menu
-    FEHIcon::Icon statsButton;
-    statsButton.SetProperties("Statistics", 93, 90, 146, 30, WHITE, WHITE);
-    // instructions button object, goes to instructions menu
-    FEHIcon::Icon instructions;
-    instructions.SetProperties("How to Play", 93, 120, 146, 30, WHITE, WHITE);
-    // credits button object, goes to credits menu
-    FEHIcon::Icon credits;
-    credits.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
-    // back button object, returns to previous menu
-    FEHIcon::Icon backButton;
-    FEHIcon::Icon singlePlayerButton;
-    singlePlayerButton. SetProperties("Single Player",80, 100, 158, 30, WHITE, WHITE);
-    FEHIcon::Icon multiplayerButton;
-    multiplayerButton.SetProperties("Two Player", 80, 160, 158, 30, WHITE, WHITE);
+  
+    
+
+
+   
     bool singlePlayerMode;
     bool gameStarted = false;
+
+    
+    float x, y;
+
     // program loop, never exit
     while(1){
-    // set the back button to have text "Back"
-    backButton.SetProperties("Back", 250, 10, 50, 30, WHITE, RED);
    
     // menu proper loop, allows for user to return back to the menu after 
     // selecting play but without selecting a mode
+    
     while(1){
         // menu inner loop
         while(1){
         // display main menu and title
-        MenuArt.Draw(0, 0);
-        LCD.SetFontScale(1.5);
-        LCD.SetFontColor(WHITE);
-        LCD.WriteAt("FEH Fighters", 10, 10);
-        LCD.DrawHorizontalLine(38, 3, 190);
-        LCD.SetFontScale(1);
+        
+        switch(mainMenu(gameData)){
+            case gameData.pages::START:
+                switch(modeSelect(gameData)){
+                    case gameData.pages::SINGLEPLAYER:
+                        gameStarted = true;
+                        singlePlayerMode = true;
+                    break;
+                    case gameData.pages::MULTIPLAYER:
+                        gameStarted = true;
+                    break;
+                    case gameData.pages::MAIN:
 
-        // draw buttons
-        startButton.Draw();
-        statsButton.Draw();
-        instructions.Draw();
-        credits.Draw();
-        // wait for a button to be pressed
-        float x, y;
-        while(!LCD.Touch(&x,&y)) {};
-        if(startButton.Pressed(x, y, 0)){
-            //start game
+                    break;
+                }
+
+
+
             break;
-        }
-        if(statsButton.Pressed(x, y, 0)){
-            // display statistics screen
-            while(1){
-                MenuArt.Draw(0,0);
-                LCD.SetFontScale(1.5);
-                LCD.SetFontColor(WHITE);
-                LCD.WriteAt("FEH Fighters", 10, 10);
-                LCD.DrawHorizontalLine(38, 3, 190);
-                LCD.SetFontScale(1);
-                backButton.Draw();
-                LCD.SetFontScale(0.5);
-                LCD.WriteRC("Player 1 Wins: ", 10, 18);
-                LCD.WriteRC(redWins, 10, 35);
-                LCD.SetFontColor(LIGHTBLUE);
-                LCD.WriteRC("Player 2 Wins: ", 11, 18);
-                LCD.WriteRC(blueWins, 11, 35);
-                LCD.SetFontColor(WHITE);
-                LCD.WriteRC("Games Played: ", 12, 18);
-                LCD.WriteRC(numGames, 12, 35);
-                LCD.Update();
-                float x1, y1;
-                while(!LCD.Touch(&x1,&y1)) {};
-                if(backButton.Pressed(x1, y1, 0)){
-                    break;
+            case gameData.pages::STATS:
+                while(!statsScreen(gameData)){
+                    while(!LCD.Touch(&x,&y));
                 }
+            break;
+            case gameData.pages::INSTRUCTIONS:
+                while(!instructions(gameData)){
+                    while(!LCD.Touch(&x,&y));
+                }
+            break;
+            case gameData.pages::CREDITS:
+                while(!credits(gameData)){
+                    while(!LCD.Touch(&x,&y));
+                }
+            break;
+            default:
+                while(!LCD.Touch(&x,&y)) {};
+            break;
 
-            }
         }
-        if(instructions.Pressed(x, y, 0)){
-            // display instructions screen
-            while(1){
-                MenuArt.Draw(0,0);
-                LCD.SetFontScale(1.5);
-                LCD.SetFontColor(WHITE);
-                LCD.WriteAt("FEH Fighters", 10, 10);
-                LCD.DrawHorizontalLine(38, 3, 190);
-                LCD.SetFontScale(1);
-                backButton.Draw();
-                LCD.SetFontScale(0.5);
-                LCD.WriteRC("--Player 1--", 6, 16);
-                LCD.WriteRC("Move: WASD", 7, 16);
-                LCD.WriteRC("Punch: X",8, 16);
-                LCD.WriteRC("Kick: C", 9, 16);
-                LCD.WriteRC("Cast Projectile: V", 10, 16);
-                LCD.SetFontColor(LIGHTBLUE);
-                LCD.WriteRC("--Player 2--", 12, 16);
-                LCD.WriteRC("Move: Arrow Keys", 13, 16);
-                LCD.WriteRC("Punch: I", 14, 16);
-                LCD.WriteRC("Kick: O", 15, 16);
-                LCD.WriteRC("Cast Projectile: P", 16, 16);
-                LCD.SetFontScale(1);
-                LCD.Update();
-                float x1, y1;
-                while(!LCD.Touch(&x1,&y1)) {};
-                if(backButton.Pressed(x1, y1, 0)){
-                    break;
-                }
-            }
-        }
-        if(credits.Pressed(x, y, 0)){
-            // display credits screen
-            while(1){
-                MenuArt.Draw(0,0);
-                LCD.SetFontScale(1.5);
-                LCD.SetFontColor(WHITE);
-                LCD.WriteAt("FEH Fighters", 10, 10);
-                LCD.DrawHorizontalLine(38, 3, 190);
-                LCD.SetFontScale(1);
-                backButton.Draw();
-                LCD.SetFontScale(0.5);
-                LCD.SetFontColor(WHITE);
-                LCD.WriteRC("Developers:", 10, 18);
-                LCD.WriteRC("David Rubal", 11, 18);
-                LCD.WriteRC("Charlie Limbert", 12, 18);
-                LCD.WriteRC("Art Created Using:", 13, 18);
-                LCD.WriteRC("Piskel (piskelapp.com)", 14, 18);
-                LCD.WriteRC("Pixilart (pixilart.com)", 15, 18);
-                LCD.Update();
-                float x1, y1;
-                while(!LCD.Touch(&x1,&y1)) {};
-                if(backButton.Pressed(x1, y1, 0)){
-                    break;
-                }
-
-            }
-        }
+        // this might cause issues
         Sleep(frameTimeMilliseconds);
         LCD.Update();
         }
         // display mode selection screen, allows for singleplayer or multiplayer
         while(1){
-        MenuArt.Draw(0,0);
-        singlePlayerButton.Draw();
-        multiplayerButton.Draw();
-        LCD.SetFontScale(1.5);
-        LCD.SetFontColor(WHITE);
-        LCD.WriteAt("FEH Fighters", 10, 10);
-        LCD.DrawHorizontalLine(38, 3, 190);
-        LCD.SetFontScale(1);
-        RedCountdown.Draw(150, 80);
-        RedCountdown.Draw(140, 140);
-        BlueCountdown.Draw(160, 140);
-        LCD.WriteAt("Choose a Mode", 82, 50);
-        backButton.Draw();
-        LCD.Update();
-        float x, y;
-        while(!LCD.Touch(&x,&y)) {};
-        if(backButton.Pressed(x, y, 0)){
-            break;
-        }
-        if(singlePlayerButton.Pressed(x, y, 0)){
-            singlePlayerMode = true;
-            gameStarted = true;
-            break;
-        }
-        if(multiplayerButton.Pressed(x,y,0)){
-            singlePlayerMode = false;
-            gameStarted = true;
-            break;
-        }
+        
     }
     // start the game if the a mode has been selected.
     // return to the main menu otherwise
@@ -231,7 +122,7 @@ int main()
     FEHImage BlueUI;
     BlueUI.Open("./graphics/Gui/BlueUI.png");
     // change back button to an "X"
-    backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
+    //////////backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
 
     // set player damage to 0 before game starts
@@ -246,8 +137,8 @@ int main()
     background.Draw(0,0);
     RedUI.Draw(80, 200);
     BlueUI.Draw(201,200);
-    RedCountdown.Draw(88, 160);
-    BlueCountdown.Draw(216, 160);
+    //////////RedCountdown.Draw(88, 160);
+    //////////BlueCountdown.Draw(216, 160);
      LCD.SetFontColor(WHITE);
     LCD.WriteAt("3", 145, 90);
     LCD.Update();
@@ -255,8 +146,8 @@ int main()
     background.Draw(0,0);
     RedUI.Draw(80, 200);
     BlueUI.Draw(201,200);
-    RedCountdown.Draw(88, 160);
-    BlueCountdown.Draw(216, 160);
+    //////////RedCountdown.Draw(88, 160);
+    //////////BlueCountdown.Draw(216, 160);
     LCD.SetFontColor(YELLOW);
     LCD.WriteAt("2", 145, 90);
     LCD.Update();
@@ -264,8 +155,8 @@ int main()
     background.Draw(0,0);
     RedUI.Draw(80, 200);
     BlueUI.Draw(201,200);
-    RedCountdown.Draw(88, 160);
-    BlueCountdown.Draw(216, 160);
+    //////////RedCountdown.Draw(88, 160);
+    //////////BlueCountdown.Draw(216, 160);
     LCD.SetFontColor(ORANGE);
     LCD.WriteAt("1", 145, 90);
     LCD.Update();
@@ -367,14 +258,15 @@ int main()
         Player2.updateTimers();
 
         // draw the back button to exit mid-game
-        backButton.Draw();
+        //////////backButton.Draw();
         // exit the game if the back button is hovered
         float x, y;
         LCD.Touch(&x, &y);
-        if(backButton.Pressed(x, y, 0)){
-            // return to menu if pressed
-            break;
-        }
+        //////////////////////////////////////////////////
+        //////////if(backButton.Pressed(x, y, 0)){
+        //////////    // return to menu if pressed
+        //////////    break;
+        //////////}
 
         // update frame
         LCD.Update();
@@ -386,8 +278,8 @@ int main()
         if (Player2.gameOver)
         {
             //display player 1 victory screen
-            redWins++;
-            numGames++;
+            //////////redWins++;
+            //////////numGames++;
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(RED);
@@ -404,8 +296,8 @@ int main()
         if (Player1.gameOver)
         {
             //display player 2 victory screen
-            blueWins++;
-            numGames++;
+            //////////blueWins++;
+            //////////numGames++;
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(BLUE);
