@@ -1,9 +1,9 @@
 FEHIcon::Icon standardBackBtn();
-void mainMenu(data gameData);
-void instructions(data gameData);
-void statsScreen(data gameData);
-void credits(data gameData);
-void modeSelect(data gameData);
+void mainMenu(data *gameData);
+void instructions(data *gameData);
+void statsScreen(data *gameData);
+void credits(data *gameData);
+void modeSelect(data *gameData);
 
 
 FEHIcon::Icon standardBackBtn(){
@@ -12,7 +12,7 @@ FEHIcon::Icon standardBackBtn(){
     return backBtn;
 }
 
- void mainMenu(data gameData){
+ void mainMenu(data *gameData){
 
     // start button object, breaks to gameplay
     FEHIcon::Icon startBtn;
@@ -26,27 +26,24 @@ FEHIcon::Icon standardBackBtn(){
     // credits button object, goes to credits menu
     FEHIcon::Icon creditsBtn;
     creditsBtn.SetProperties("Credits", 93, 150, 146, 30, WHITE, WHITE);
-    
-    gameData.MenuArt.Draw(0,0);
-    LCD.SetFontScale(1.5);
-    LCD.SetFontColor(WHITE);
-    LCD.WriteAt("FEH Fighters", 10, 10);
-    LCD.DrawHorizontalLine(38, 3, 190);
-    LCD.SetFontScale(1);
-
-    startBtn.Draw();
-    statsBtn.Draw();
-    instructionsBtn.Draw();
-    creditsBtn.Draw();
-
-    LCD.Update();
-
     int x, y;
-    bool i = true;
-    while(i){
-        while(i = !LCD.Touch(&x,&y)) {};
-        
-        
+    
+    while(!gameData->gameStarted){
+        gameData->MenuArt.Draw(0,0);
+        LCD.SetFontScale(1.5);
+        LCD.SetFontColor(WHITE);
+        LCD.WriteAt("FEH Fighters", 10, 10);
+        LCD.DrawHorizontalLine(38, 3, 190);
+        LCD.SetFontScale(1);
+
+        startBtn.Draw();
+        statsBtn.Draw();
+        instructionsBtn.Draw();
+        creditsBtn.Draw();
+
+        LCD.Update();
+
+        while(!LCD.Touch(&x,&y)) {};
         if(startBtn.Pressed(x, y, 0)){
             modeSelect(gameData);
         } else if(statsBtn.Pressed(x, y, 0)){
@@ -55,18 +52,16 @@ FEHIcon::Icon standardBackBtn(){
             instructions(gameData);
         } else if(creditsBtn.Pressed(x,y,0)){
             credits(gameData);
-        } else {
-            i = true;
         }
     }
     
  }
 
- void instructions(data gameData){
+ void instructions(data *gameData){
 
     FEHIcon::Icon backBtn = standardBackBtn();
 
-    gameData.MenuArt.Draw(0,0);
+    gameData->MenuArt.Draw(0,0);
     LCD.SetFontScale(1.5);
     LCD.SetFontColor(WHITE);
     LCD.WriteAt("FEH Fighters", 10, 10);
@@ -97,9 +92,9 @@ FEHIcon::Icon standardBackBtn(){
  
 
  
-void statsScreen(data gameData){
+void statsScreen(data *gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
-    gameData.MenuArt.Draw(0,0);
+    gameData->MenuArt.Draw(0,0);
     LCD.SetFontScale(1.5);
     LCD.SetFontColor(WHITE);
     LCD.WriteAt("FEH Fighters", 10, 10);
@@ -108,13 +103,13 @@ void statsScreen(data gameData){
     backBtn.Draw();
     LCD.SetFontScale(0.5);
     LCD.WriteRC("Player 1 Wins: ", 10, 18);
-    LCD.WriteRC(gameData.redWins, 10, 35);
+    LCD.WriteRC(gameData->redWins, 10, 35);
     LCD.SetFontColor(LIGHTBLUE);
     LCD.WriteRC("Player 2 Wins: ", 11, 18);
-    LCD.WriteRC(gameData.blueWins, 11, 35);
+    LCD.WriteRC(gameData->blueWins, 11, 35);
     LCD.SetFontColor(WHITE);
     LCD.WriteRC("Games Played: ", 12, 18);
-    LCD.WriteRC(gameData.numGames, 12, 35);
+    LCD.WriteRC(gameData->numGames, 12, 35);
 
     LCD.Update();
 
@@ -123,9 +118,9 @@ void statsScreen(data gameData){
  }
 
 
- void credits(data gameData){
+ void credits(data *gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
-    gameData.MenuArt.Draw(0,0);
+    gameData->MenuArt.Draw(0,0);
     LCD.SetFontScale(1.5);
     LCD.SetFontColor(WHITE);
     LCD.WriteAt("FEH Fighters", 10, 10);
@@ -147,9 +142,9 @@ void statsScreen(data gameData){
     while(!(LCD.Touch(&x,&y) && backBtn.Pressed(x, y, 0))) {};
  }
 
- void modeSelect(data gameData){
+ void modeSelect(data *gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
-    gameData.MenuArt.Draw(0,0);
+    gameData->MenuArt.Draw(0,0);
 
     FEHIcon::Icon singlePlayerButton;
     singlePlayerButton. SetProperties("Single Player",80, 100, 158, 30, WHITE, WHITE);
@@ -162,7 +157,6 @@ void statsScreen(data gameData){
     FEHImage BlueCountdown;
     BlueCountdown.Open("./graphics/Animations/PlayerBlue/Left/Idle/Idle0.png");
 
-    gameData.MenuArt.Draw(0,0);
     singlePlayerButton.Draw();
     multiplayerButton.Draw();
     LCD.SetFontScale(1.5);
@@ -179,13 +173,13 @@ void statsScreen(data gameData){
     LCD.Update();
 
     int x, y;
-    while(!gameData.gameStarted){
+    while(!gameData->gameStarted){
         while(!LCD.Touch(&x,&y)) {};
         if(singlePlayerButton.Pressed(x, y, 0)){
-            gameData.singlePlayerMode = true;
-            gameData.gameStarted = true;
+            gameData->singlePlayerMode = true;
+            gameData->gameStarted = true;
         } else if(multiplayerButton.Pressed(x, y, 0)){
-            gameData.gameStarted = true;
+            gameData->gameStarted = true;
         } else if(backBtn.Pressed(x,y,0)){
             break;
         }

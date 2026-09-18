@@ -33,18 +33,14 @@ int main()
     // menu proper loop, allows for user to return back to the menu after 
     // selecting play but without selecting a mode
     
-    while(1){
-        // menu inner loop
-        while(1){
+    while(!gameData.gameStarted){
+     
+       
         // display main menu and title
-
-        mainMenu(gameData);
-
-        }
-        // display mode selection screen, allows for singleplayer or multiplayer
-        while(1){
+        mainMenu(&gameData);
         
-    }
+        // display mode selection screen, allows for singleplayer or multiplayer
+    
     // start the game if the a mode has been selected.
     // return to the main menu otherwise
 
