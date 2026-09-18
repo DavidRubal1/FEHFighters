@@ -5,6 +5,7 @@ class data{
         // 
         FEHImage MenuArt;
         int redWins, blueWins, numGames;
+        bool singlePlayerMode, gameStarted;
 };
 
 data::data(){
@@ -12,4 +13,6 @@ data::data(){
     redWins = 0;
     blueWins = 0; 
     numGames = 0;
+    gameStarted = false;
+    singlePlayerMode = false;
 }

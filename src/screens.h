@@ -1,5 +1,9 @@
-#include "FEHLCD.h"
-#include "data.h"
+FEHIcon::Icon standardBackBtn();
+void mainMenu(data gameData);
+void instructions(data gameData);
+void statsScreen(data gameData);
+void credits(data gameData);
+void modeSelect(data gameData);
 
 
 FEHIcon::Icon standardBackBtn(){
@@ -8,8 +12,8 @@ FEHIcon::Icon standardBackBtn(){
     return backBtn;
 }
 
- 
- int mainMenu(data gameData){
+ void mainMenu(data gameData){
+
     // start button object, breaks to gameplay
     FEHIcon::Icon startBtn;
     startBtn.SetProperties("Play", 93, 60, 146, 30, WHITE, WHITE);
@@ -34,21 +38,31 @@ FEHIcon::Icon standardBackBtn(){
     statsBtn.Draw();
     instructionsBtn.Draw();
     creditsBtn.Draw();
+
+    LCD.Update();
+
     int x, y;
-    if(startBtn.Pressed(x, y, 0)){
-        return gameData.pages::START;
-    } else if(statsBtn.Pressed(x, y, 0)){
-        return gameData.pages::STATS;
-    } else if(instructionsBtn.Pressed(x, y, 0)){
-        return gameData.pages::INSTRUCTIONS;
-    } else if(creditsBtn.Pressed(x,y,0)){
-        return gameData.pages::CREDITS;
-    } else{
-        return -1;
+    bool i = true;
+    while(i){
+        while(i = !LCD.Touch(&x,&y)) {};
+        
+        
+        if(startBtn.Pressed(x, y, 0)){
+            modeSelect(gameData);
+        } else if(statsBtn.Pressed(x, y, 0)){
+            statsScreen(gameData);
+        } else if(instructionsBtn.Pressed(x, y, 0)){
+            instructions(gameData);
+        } else if(creditsBtn.Pressed(x,y,0)){
+            credits(gameData);
+        } else {
+            i = true;
+        }
     }
+    
  }
 
- int instructions(data gameData){
+ void instructions(data gameData){
 
     FEHIcon::Icon backBtn = standardBackBtn();
 
@@ -72,18 +86,18 @@ FEHIcon::Icon standardBackBtn(){
     LCD.WriteRC("Kick: O", 15, 16);
     LCD.WriteRC("Cast Projectile: P", 16, 16);
     LCD.SetFontScale(1);
-    //LCD.Update();
-    float x1, y1;
-        if(backBtn.Pressed(x1, y1, 0)){
-            return gameData.pages::MAIN;
-        } else {
-            return -1;
-        }
+
+    LCD.Update();
+
+    float x, y;
+    while(!(LCD.Touch(&x,&y) && backBtn.Pressed(x, y, 0))) {};
+    
+    
  }
  
 
  
-int statsScreen(data gameData){
+void statsScreen(data gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
     gameData.MenuArt.Draw(0,0);
     LCD.SetFontScale(1.5);
@@ -101,17 +115,15 @@ int statsScreen(data gameData){
     LCD.SetFontColor(WHITE);
     LCD.WriteRC("Games Played: ", 12, 18);
     LCD.WriteRC(gameData.numGames, 12, 35);
-    //LCD.Update();
-    float x1, y1;
-    if(backBtn.Pressed(x1, y1, 0)){
-        return gameData.pages::MAIN;
-    } else {
-        return -1;
-    }
+
+    LCD.Update();
+
+    float x, y;
+    while(!(LCD.Touch(&x,&y) && backBtn.Pressed(x, y, 0))) {};
  }
 
 
- int credits(data gameData){
+ void credits(data gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
     gameData.MenuArt.Draw(0,0);
     LCD.SetFontScale(1.5);
@@ -128,16 +140,14 @@ int statsScreen(data gameData){
     LCD.WriteRC("Art Created Using:", 13, 18);
     LCD.WriteRC("Piskel (piskelapp.com)", 14, 18);
     LCD.WriteRC("Pixilart (pixilart.com)", 15, 18);
+
     LCD.Update();
-    float x1, y1;
-    if(backBtn.Pressed(x1, y1, 0)){
-        return gameData.pages::MAIN;
-    } else {
-        return -1;
-    }
+
+    float x, y;
+    while(!(LCD.Touch(&x,&y) && backBtn.Pressed(x, y, 0))) {};
  }
 
- int modeSelect(data gameData){
+ void modeSelect(data gameData){
     FEHIcon::Icon backBtn = standardBackBtn();
     gameData.MenuArt.Draw(0,0);
 
@@ -166,14 +176,19 @@ int statsScreen(data gameData){
     LCD.WriteAt("Choose a Mode", 82, 50);
     backBtn.Draw();
 
+    LCD.Update();
+
     int x, y;
-    if(singlePlayerButton.Pressed(x, y, 0)){
-        return gameData.pages::SINGLEPLAYER;
-    } else if(multiplayerButton.Pressed(x, y, 0)){
-        return gameData.pages::MULTIPLAYER;
-    } else if(backBtn.Pressed(x,y,0)){
-        return gameData.pages::MAIN;
-    } else{
-        return -1;
+    while(!gameData.gameStarted){
+        while(!LCD.Touch(&x,&y)) {};
+        if(singlePlayerButton.Pressed(x, y, 0)){
+            gameData.singlePlayerMode = true;
+            gameData.gameStarted = true;
+        } else if(multiplayerButton.Pressed(x, y, 0)){
+            gameData.gameStarted = true;
+        } else if(backBtn.Pressed(x,y,0)){
+            break;
+        }
     }
+    
  }

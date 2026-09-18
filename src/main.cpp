@@ -5,13 +5,14 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include "data/data.h"
 #include "timer.h"
 #include "hitbox.h"
 #include "animation.h" // uses timer.h
 #include "attack.h" // uses hitbox.h and animation.h
 #include "player.h" // uses hitbox.h, attack.h, and animation.h
 #include "screens.h"
-#include "data.h"
+
 // Team G25-26
 // David Rubal and Charlie Limbert
 
@@ -24,16 +25,6 @@ int main()
     //Menu Objects
     /* menu coded by David Rubal*/
 
-    
-  
-    
-
-
-   
-    bool singlePlayerMode;
-    bool gameStarted = false;
-
-    
     float x, y;
 
     // program loop, never exit
@@ -46,48 +37,9 @@ int main()
         // menu inner loop
         while(1){
         // display main menu and title
-        
-        switch(mainMenu(gameData)){
-            case gameData.pages::START:
-                switch(modeSelect(gameData)){
-                    case gameData.pages::SINGLEPLAYER:
-                        gameStarted = true;
-                        singlePlayerMode = true;
-                    break;
-                    case gameData.pages::MULTIPLAYER:
-                        gameStarted = true;
-                    break;
-                    case gameData.pages::MAIN:
 
-                    break;
-                }
+        mainMenu(gameData);
 
-
-
-            break;
-            case gameData.pages::STATS:
-                while(!statsScreen(gameData)){
-                    while(!LCD.Touch(&x,&y));
-                }
-            break;
-            case gameData.pages::INSTRUCTIONS:
-                while(!instructions(gameData)){
-                    while(!LCD.Touch(&x,&y));
-                }
-            break;
-            case gameData.pages::CREDITS:
-                while(!credits(gameData)){
-                    while(!LCD.Touch(&x,&y));
-                }
-            break;
-            default:
-                while(!LCD.Touch(&x,&y)) {};
-            break;
-
-        }
-        // this might cause issues
-        Sleep(frameTimeMilliseconds);
-        LCD.Update();
         }
         // display mode selection screen, allows for singleplayer or multiplayer
         while(1){
@@ -95,9 +47,7 @@ int main()
     }
     // start the game if the a mode has been selected.
     // return to the main menu otherwise
-    if(gameStarted){
-        break;
-    }
+
     }
     
 
@@ -108,7 +58,7 @@ int main()
     // in multiplayer, player 1 and player 2 are to be controlled by two separate people in competition 
     // if singleplayer is selected, player 2 is controlled by an AI
     player Player1(false, KEY_A, KEY_D, KEY_W, KEY_S, KEY_X, KEY_C, KEY_V, 88, 160, RED);
-    player Player2(singlePlayerMode, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
+    player Player2(gameData.singlePlayerMode, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_I, KEY_O, KEY_P, 216, 160, BLUE);
 
 
     // create FEHImage objects for each background element
@@ -245,7 +195,7 @@ int main()
         // perform the same player functions above for player2
         // if single player mode is active, call a function to determine the actions that 
         // player 2 takes. in multiplayer mode this is deactivated.
-        if(singlePlayerMode){
+        if(gameData.singlePlayerMode){
             // the player 1 object is sent in to allow the AI to see player 1's position
             Player2.determineAIDecisions(&Player1);
         }
