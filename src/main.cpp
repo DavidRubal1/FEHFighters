@@ -15,8 +15,6 @@
 // David Rubal and Charlie Limbert
 
 
-
-
 int main()
 {
     int frameTimeMilliseconds = 20; // time between frames in milliseconds
@@ -26,12 +24,12 @@ int main()
     /* menu coded by David Rubal*/
     // Background image
     FEHImage MenuArt;
-    MenuArt.Open("./MenuArt/MenuKeyArt.png");
+    MenuArt.Open("./graphics/Backgrounds/MenuKeyArt.png");
     // still images for characters to display during countdown and during mode select
     FEHImage RedCountdown;
-    RedCountdown.Open("./PlayerRed/Right/Idle/Idle0.png");
+    RedCountdown.Open("./graphics/Animations/PlayerRed/Right/Idle/Idle0.png");
     FEHImage BlueCountdown;
-    BlueCountdown.Open("./PlayerBlue/Left/Idle/Idle0.png");
+    BlueCountdown.Open("./graphics/Animations/PlayerBlue/Left/Idle/Idle0.png");
     
     // start button object, breaks to gameplay
     FEHIcon::Icon startButton;
@@ -225,13 +223,13 @@ int main()
     // create FEHImage objects for each background element
     // background art
     FEHImage background;
-    background.Open("./Background/FEHBackgroundVer3.png");
+    background.Open("./graphics/Backgrounds/FEHBackgroundVer3.png");
     // red diamond image
     FEHImage RedUI;
-    RedUI.Open("./UI/RedUI.png");
+    RedUI.Open("./graphics/Gui/RedUI.png");
     // blue diamond image
     FEHImage BlueUI;
-    BlueUI.Open("./UI/BlueUI.png");
+    BlueUI.Open("./graphics/Gui/BlueUI.png");
     // change back button to an "X"
     backButton.SetProperties("X", 10, 10, 15, 15, WHITE, RED);
     FEHImage redlifeImage, bluelifeImage;
@@ -312,30 +310,30 @@ int main()
         switch (Player1.remainingLives)
         {
             case 3:
-                redlifeImage.Open("./UI/redLife3.png");
+                redlifeImage.Open("./graphics/Gui/redLife3.png");
                 redlifeImage.Draw(85, 209);
                 break;
             case 2:
-                redlifeImage.Open("./UI/redLife2.png");
+                redlifeImage.Open("./graphics/Gui/redLife2.png");
                 redlifeImage.Draw(85, 209);
                 break;
             case 1:
-                redlifeImage.Open("./UI/redLife1.png");
+                redlifeImage.Open("./graphics/Gui/redLife1.png");
                 redlifeImage.Draw(85, 209);
         }
 
         switch (Player2.remainingLives)
         {
             case 3:
-                bluelifeImage.Open("./UI/blueLife3.png");
+                bluelifeImage.Open("./graphics/Gui/blueLife3.png");
                 bluelifeImage.Draw(206, 209);
                 break;
             case 2:
-                bluelifeImage.Open("./UI/blueLife2.png");
+                bluelifeImage.Open("./graphics/Gui/blueLife2.png");
                 bluelifeImage.Draw(206, 209);
                 break;
             case 1:
-                bluelifeImage.Open("./UI/blueLife1.png");
+                bluelifeImage.Open("./graphics/Gui/blueLife1.png");
                 bluelifeImage.Draw(206, 209);
         }
         

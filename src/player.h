@@ -115,7 +115,7 @@ class player{
 
         // separate animator and animation type for double jump to allow for another animation to play during double jump
         animation doubleJumpAnimator;
-        animationType doubleJumpAnimation = {"./DoubleJump/doubleJumpFrame", 3, false, 3};
+        animationType doubleJumpAnimation = {"/DoubleJump/doubleJumpFrame", 3, false, 3};
         // position of double jump
         int doubleJumpX, doubleJumpY;
 

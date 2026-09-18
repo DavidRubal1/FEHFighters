@@ -31,10 +31,10 @@ void animation::resetTimer(){
 }
 
 // plays a frame of animation given info about the animation
-// animation path must follow ./Player(Color)/(Direction)/
+// animation path must follow ./graphics/Animations/Player(Color)/(Direction)/
 void animation::playAnimation(char fileBaseName[], int posX, int posY, int direction, int finalFrameNum, int frameLength, bool looping, int ID){
     // gradually builds the file path
-    char filePath[64] = "";
+    char filePath[64] = "./graphics/Animations";
     // if the animation ID has changed, the reset the animation Timer
     if(currentAnimationID != ID){
         animationTimer.resetTimer();
@@ -52,9 +52,9 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
     if(animationTimer.isActive()){
         // add the player directory to the file path
         if(color == RED){
-            strcat(filePath, "./PlayerRed");
+            strcat(filePath, "/PlayerRed");
         }else{
-            strcat(filePath, "./PlayerBlue");
+            strcat(filePath, "/PlayerBlue");
         }
         // add the direction directory to the file path
         if(direction == -1){
@@ -87,7 +87,7 @@ void animation::playAnimation(char fileBaseName[], int posX, int posY, int direc
 // made for non-player-bound directionless animations (double jump)
 void animation::playAnimation(char fileBaseName[], int posX, int posY, int finalFrameNum, int frameLength, bool looping, int ID){
     //same functionality as the function above, but without the player color and direction directories
-    char filePath[64] = "";
+    char filePath[64] = "./graphics/Animations";
     if(currentAnimationID != ID){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(finalFrameNum);
