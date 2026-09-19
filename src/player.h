@@ -16,7 +16,6 @@ class player{
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void action();
         attack* getCurrentAttack();
-        animationType* getCurrentAttackAnimation();
         hitbox getHitbox();
         float getDamage();
         int remainingLives = 3;
@@ -102,20 +101,15 @@ class player{
         float dashLagTimer = 0;
         
         // animation player to draw the player's sprites for any given animation
-        animation playerAnimator;
-        // animation type info for movement animations, info is passed through the animation player
-        animationType idleAnimation = {"/Idle/Idle", 1, true, 0, 30};
-        animationType dashAnimation = {"/Dash/Dash", 8, true, 1};
-        animationType crouchAnimation = {"/Crouch/Crouch", 0, true, 2};
+        animator playerAnimator;
 
         // animation types for attack animations, info is passed through animation player
-        animationType punchAnimation;
-        animationType kickAnimation;
-        animationType projectileCastAnimation;
+        // animationType punchAnimation;
+        // animationType kickAnimation;
+        // animationType projectileCastAnimation;
 
         // separate animator and animation type for double jump to allow for another animation to play during double jump
-        animation doubleJumpAnimator;
-        animationType doubleJumpAnimation = {"/DoubleJump/doubleJumpFrame", 3, false, 3};
+        animator doubleJumpAnimator;
         // position of double jump
         int doubleJumpX, doubleJumpY;
 
@@ -152,7 +146,7 @@ class player{
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
-        int currentAnimationType = animationName::IDLE;
+        animationType currentAnimationType;
         int currentAttackType = -1;  //(-1 = none, 0 = punch, 1 = kick, etc.)
         int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
         bool AttackPressedLastFrame = false;  //track previous frame's button state
@@ -187,10 +181,10 @@ class player{
 /* written by David Rubal*/
 player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-        punch(attackType::BASIC, 15, 10, 5, 4), 
-        kickAttack(attackType::KICK, 10, 12, 3, 4), 
-        projectileCast(attackType::PROJECTILE_CAST, 10, 5, 3, 6), 
-        projectileProjectile(attackType::PROJECTILE, 9, 8, -5, 8, 2.5),
+        punch(attackType::ATK_BASIC, 15, 10, 5, 4), 
+        kickAttack(attackType::ATK_KICK, 10, 12, 3, 4), 
+        projectileCast(attackType::ATK_PROJECTILE_CAST, 10, 5, 3, 6), 
+        projectileProjectile(attackType::ATK_PROJECTILE, 9, 8, -5, 8, 2.5),
         playerAnimator(color), 
         doubleJumpAnimator(color){
     this->left = left;
@@ -215,18 +209,7 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
         direction = 1;  // Red starts facing right
     }
 
-    //set up partial info for attack animations
-    strcpy(punchAnimation.fileName, "/Punch/");
-    punchAnimation.ID = 3;
-    punchAnimation.looping = false;
 
-    strcpy(kickAnimation.fileName, "/Kick/");
-    kickAnimation.ID = 4;
-    kickAnimation.looping = false;
-
-    strcpy(projectileCastAnimation.fileName, "/ProjectileCast/");
-    projectileCastAnimation.ID = 5;
-    projectileCastAnimation.looping = false;
 }
 
 
@@ -248,27 +231,27 @@ float player::getDamage(){
  }
 
 
-
 // enact knockback and hitstun on player when hit, and increase damage counter
 /* written by David Rubal*/
 void player::getHit(attack* activeAttack){
     float forceX, forceY;
+    attackProperties properties = activeAttack->getProperties();
     // scale force based on current damage and given knockback
-    float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getKBScaling()) + (*activeAttack).getKnockback();
+    float force = (((0.1 * (damage / 100)))* 50 * properties.KBscaling) + properties.knockback;
     // reset timing varibles before entering hitstun, or move those timers into a separate function
     hitstunTimer.resetTimer();
     // set hitstun time based on scaling
-    hitstunTimer.changeTimerMax((*activeAttack).getHitstun()  + (*activeAttack).getHitstunScaling()  * damage);
+    hitstunTimer.changeTimerMax(properties.hitstunFramesBase  + properties.hitstunScaling  * damage);
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
-    forceX = (*activeAttack).getDirection() * force*cos((*activeAttack).getAngle());
-    forceY = force*sin((*activeAttack).getAngle());
+    forceX = (*activeAttack).getDirection() * force*cos(properties.angle);
+    forceY = force*sin(properties.angle);
     // apply force to player's velocity components
     velocityX = forceX;
     velocityY = -1 * forceY;
     currentGravityForce = 0;
     // increase player's damage
-    damage += (*activeAttack).getDamage();
+    damage += properties.damage;
 }
 
 // move and draw projectile
@@ -332,7 +315,7 @@ void player::playAnimations(){
     //--------TODO: Rework this section with less nesting and only one call to the animator-------//
     // Possibly tie this to the movement code as well...
 
-    animationType currentAnimation = idleAnimation;
+    currentAnimationType = ANI_IDLE;
     
     // if not in hitstun
     if(!hitstunTimer.isActive() && !inAttackAnimation && grounded){
@@ -342,42 +325,50 @@ void player::playAnimations(){
         if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
             || AIHorizontalDirection > -1){ 
             
-            currentAnimation = dashAnimation;
+            currentAnimationType = ANI_DASH;
         } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
             
-            currentAnimation = crouchAnimation;
+            currentAnimationType = ANI_CROUCH;
         }
     }
     
     // play double jump animation
     if(doubleJumpUsed){
-        doubleJumpAnimator.playAnimation(doubleJumpAnimation, doubleJumpX, doubleJumpY);
+        doubleJumpAnimator.playAnimation(animationPropertiesLookup(ANI_DOUBLE_JUMP), doubleJumpX, doubleJumpY);
     }else{
         // resets the animator when player is grounded
         doubleJumpAnimator.resetTimer();
     }
     
+
+    // TODO: Rework attack animator
+    //- use animationData.h file to get basic data, then get the frame times from attack properties
+
     //attack animation 
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
     if(inAttackAnimation && !hitstunTimer.isActive()){
-        char filePath[64];
-        // Calculate total animation duration by summing all frame timings
-        int totalDuration = 0;
-        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
-        {
-            totalDuration += FrameTiming[currentAttackType][i];
-        }
-        // gets the current attack animation type, used to play attack animation
-        animationType* currentAttackAnimation = getCurrentAttackAnimation();
-        // total number of frames in attack animation
-        (*currentAttackAnimation).finalFrameNum = totalDuration;
+
+        
+        if(punch.isActive()){
+            currentAnimationType = ANI_BASIC;
+        } else if(kickAttack.isActive()){
+            currentAnimationType = ANI_KICK;
+        } else if(projectileCast.isActive()){
+            currentAnimationType = ANI_CAST;
+        } 
+
+
+        int frameTime = 0;
+        animationProperties attackAnimation
+
 
         // Determine current frame based on timer
         int elapsedTime = 0;
         attackHitboxActive = false;
 
-        for(int i = 0; i < attackFrameCount[currentAttackType]; i++)
+        for(int i = 0; i < 5; i++)
         {
+            //TODO: this should be the job of the Attack itself?
             //determines what frame the attack animation is on
             if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
             {
@@ -388,6 +379,8 @@ void player::playAnimations(){
             }
             elapsedTime += FrameTiming[currentAttackType][i];
         }
+
+
         // offsets the attack by a certain amount to align the animation with the player's hitbox
         int offsetPositionX, offsetPositionY;
         if(direction == -1){
@@ -432,22 +425,6 @@ attack* player::getCurrentAttack(){
         break;
         case 2:
         return &projectileCast;
-        break;
-    }
-}
-
-// returns pointer to current attack animation
-/* written by David Rubal*/
-animationType* player::getCurrentAttackAnimation(){
-    switch(currentAttackType){
-        case 0: 
-        return &punchAnimation;
-        break;
-        case 1: 
-        return &kickAnimation;
-        break;
-        case 2:
-        return &projectileCastAnimation;
         break;
     }
 }

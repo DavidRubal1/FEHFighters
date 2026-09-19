@@ -1,72 +1,60 @@
-// struct to create types of animations for simple compatibility with the playAnimation methods above
-struct animationType{
-    char fileName[32];
-    int finalFrameNum; //the # of the last frame of the animation
-    bool looping; // does the animation loop
-    int ID; // unique identifier to differentiate animations
-    int frameLength = 1; // how long to hold the current frame for
-};
-
- enum animationName{
-     IDLE, CROUCH, BASIC, KICK, CAST, DASH
- };
-
 
 // class and all functions written by David Rubal
-class animation{
+class animator{
     public:
-        animation(int color);
+        animator(int color);
         timer getTimer();
-        void playAnimation(animationType animationInfo, int posX, int posY, int direction);
+        int playAnimation(animationProperties properties, int posX, int posY, int direction);
         // directionless
-        void playAnimation(animationType animationInfo, int posX, int posY);
+        int playAnimation(animationProperties properties, int posX, int posY);
         void resetTimer();
 
     private:
         int currentAnimationID = -1;
         int color;
-        animationType currentAnimation;
+        animationProperties currentAnimation;
         timer animationTimer;
         timer holdTime;
         FEHImage drawAnimation;
 };
 
 // Constructor, sets the color of the object to be animated
-animation::animation(int color)
+animator::animator(int color)
 : animationTimer(), holdTime(){
     this->color = color;
 }
 
 // returns a copy of the animationTimer
-timer animation::getTimer(){
+timer animator::getTimer(){
     return animationTimer;
 }
 // resets the animation timer
-void animation::resetTimer(){
+void animator::resetTimer(){
     animationTimer.resetTimer();
 }
 
 // plays a frame of animation given info about the animation
 // animation path must follow ./graphics/Animations/Player(Color)/(Direction)/
-void animation::playAnimation(animationType animationInfo, int posX, int posY, int direction){
-    currentAnimation = animationInfo;
+// returns current animation frame
+int animator::playAnimation(animationProperties properties, int posX, int posY, int direction){
+    currentAnimation = properties;
 
     // gradually builds the file path
     char filePath[64] = "./graphics/Animations";
     // if the animation ID has changed, the reset the animation Timer
-    if(currentAnimationID != animationInfo.ID){
+    if(currentAnimationID != properties.ID){
         animationTimer.resetTimer();
-        animationTimer.changeTimerMax(animationInfo.finalFrameNum);
+        animationTimer.changeTimerMax(properties.finalFrameNum);
         holdTime.resetTimer();
-        currentAnimationID = animationInfo.ID;
+        currentAnimationID = properties.ID;
     }
-    // update the timer each frame
+    // update whether the time is active or not (has reached max val or not)
     animationTimer.updateTimerState();
     // reset the timer if it is looping and has become inactive
-    if(animationInfo.looping && !animationTimer.isActive()){
+    if(properties.looping && !animationTimer.isActive()){
         animationTimer.resetTimer();
     }
-    // when the animation timer is active
+
     if(animationTimer.isActive()){
         // add the player directory to the file path
         if(color == RED){
@@ -81,7 +69,7 @@ void animation::playAnimation(animationType animationInfo, int posX, int posY, i
             strcat(filePath, "/Right");
         }
         // add the given file name to the file path
-        strcat(filePath, animationInfo.fileName);
+        strcat(filePath, properties.fileName);
         // add the number indicator given for the frame of animation 
         strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
         // add the .png file type
@@ -89,8 +77,8 @@ void animation::playAnimation(animationType animationInfo, int posX, int posY, i
         //draw the given animation at the provided location
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        // determine if the currnet frame # should be held for the next frame
-        if(holdTime.getCurrentTimerTime() < animationInfo.frameLength - 1){
+        // determine if the current frame # should be held for the next frame
+        if(holdTime.getCurrentTimerTime() < properties.frameLength - 1){
             holdTime.incrementTimer();
         }else{
             animationTimer.incrementTimer();
@@ -98,42 +86,44 @@ void animation::playAnimation(animationType animationInfo, int posX, int posY, i
         }
         
     }
+    return animationTimer.getCurrentTimerTime();
 
 }
 
 // plays a frame of animation given info about the animation
 // made for non-player-bound directionless animations (double jump)
-void animation::playAnimation(animationType animationInfo, int posX, int posY){
-    currentAnimation = animationInfo;
+int animator::playAnimation(animationProperties properties, int posX, int posY){
+    currentAnimation = properties;
 
     //same functionality as the function above, but without the player color and direction directories
     char filePath[64] = "./graphics/Animations";
     // if the animation 
-    if(currentAnimationID != animationInfo.ID){
+    if(currentAnimationID != properties.ID){
         animationTimer.resetTimer();
-        animationTimer.changeTimerMax(animationInfo.finalFrameNum);
+        animationTimer.changeTimerMax(properties.finalFrameNum);
         holdTime.resetTimer();
-        currentAnimationID = animationInfo.ID;
+        currentAnimationID = properties.ID;
     }
     animationTimer.updateTimerState();
-    if(animationInfo.looping && !animationTimer.isActive()){
+    if(properties.looping && !animationTimer.isActive()){
         if(!animationTimer.isActive()){
             animationTimer.resetTimer();
         }
     }
     if(animationTimer.isActive()){
-        strcat(filePath, animationInfo.fileName);
+        strcat(filePath, properties.fileName);
         strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
         strcat(filePath, ".png");
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        if(holdTime.getCurrentTimerTime() < animationInfo.frameLength - 1){
+        if(holdTime.getCurrentTimerTime() < properties.frameLength - 1){
             holdTime.incrementTimer();
         }else{
             animationTimer.incrementTimer();
             holdTime.resetTimer();
         }
     }
+     return animationTimer.getCurrentTimerTime();
 }
 
 

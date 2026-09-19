@@ -13,14 +13,12 @@ class attack {
         float getXVelocity();
         int getAttackType();
         int getDirection();
-        float getDamage();
-        float getKnockback();
-        float getAngle();
-        float getKBScaling();
-        int getHitstun();
-        float getHitstunScaling();
         void playProjectileAnimation(int color);
         bool isActive();
+        attackProperties getProperties();
+        int getCurrentFrame();
+        void incrementFrame();
+        void resetFrameCounter();
         
     private:
         // attack properties
@@ -40,18 +38,20 @@ class attack {
         int hitboxHeight;
         int hitboxLength;
         
-        // attack state
+        // whether attack is being used or not
         //TODO: REPLACE THIS WITH THE ACTIVE FRAMES VECTOR
+        // Attack should know its current frame being played 
         bool active = false;
 
         attackProperties properties;
+        int currentFrame = 0;
         
         // hitbox for attack
         hitbox attackHitbox;
 
         // TODO: figure out why this is here
         // -> this should be a separate entity from the player
-        animationType projectile = {"/Projectile/", 1, true, 5, 1};
+        animationProperties projectile = {"/Projectile/", 1, true, 5, 1};
 };
 
 // Constructor
@@ -64,7 +64,7 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->offX = offsetX;
     this->offY = offsetY;
 
-    this->properties = assignAttackProperties(type);    
+    this->properties = attackPropertiesLookup(type);    
 }
 
 // projectile constructor
@@ -76,18 +76,14 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->offX = offsetX;
     this->offY = offsetY;
     this->velocityX = velX;
-    
-
-    //TODO: find out why this code it here and what it does
-    strcpy(projectile.fileName, "/Projectile/");
-    projectile.looping = true;
+    this->properties = attackPropertiesLookup(type);    
         
 }
 // "getters" written by David Rubal
 
 // plays the animation of the projectile given the player color
 void attack::playProjectileAnimation(int color){
-    animation projectileAnimator(color);
+    animator projectileAnimator(color);
     projectileAnimator.playAnimation(projectile, positionX, positionY, direction);
 }
 
@@ -104,31 +100,15 @@ attackProperties attack::getProperties(){
     return properties;
 }
 
-// gets the damage of the attack
-float attack::getDamage(){
-    return damage;
+int attack::getCurrentFrame(){
+    return currentFrame;
 }
 
-// gets the knockback of the attack
-float attack::getKnockback(){
-    return knockback;
+void attack::incrementFrame(){
+    currentFrame++;
 }
-
-// gets the angle of the attack
-float attack::getAngle(){
-    return angle;
-}
-// gets the knockback scaling of the attack
-float attack::getKBScaling(){
-    return KBscaling;
-}
-// gets the hitstun amount of the attack
-int attack::getHitstun(){
-    return hitstunFramesBase;
-}
-// gets the hitstun scaling  of the attack
-float attack::getHitstunScaling(){
-    return hitstunScaling;
+void attack::resetFrameCounter(){
+    currentFrame = 0;
 }
 
 // returns a copy of the attack's hitbox

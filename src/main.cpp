@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include "data/data.h"
+#include "data/attackData.h"
+#include "data/animationData.h"
 #include "timer.h"
 #include "hitbox.h"
 #include "animation.h" // uses timer.h
@@ -211,8 +213,8 @@ int main()
         if (Player2.gameOver)
         {
             //display player 1 victory screen
-            //////////redWins++;
-            //////////numGames++;
+            gameData.redWins++;
+            gameData.numGames++;
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(RED);
@@ -229,8 +231,8 @@ int main()
         if (Player1.gameOver)
         {
             //display player 2 victory screen
-            //////////blueWins++;
-            //////////numGames++;
+            gameData.blueWins++;
+            gameData.numGames++;
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             LCD.SetFontColor(BLUE);
@@ -242,10 +244,10 @@ int main()
             LCD.SetFontColor(BLACK);
             LCD.FillRectangle(0, 0, 320, 240);
             break;
-            Sleep(1000);
         }
     }
     // reset font size for the menu
+    gameData.gameStarted = false;
     LCD.SetFontScale(1);
 }
     return 0;

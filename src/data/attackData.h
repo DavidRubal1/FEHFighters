@@ -16,12 +16,13 @@ struct attackProperties{
 };
 
 enum attackType{
-    BASIC, KICK, PROJECTILE_CAST, PROJECTILE
+    ATK_BASIC, ATK_KICK, ATK_PROJECTILE_CAST, ATK_PROJECTILE
 };
 
-attackProperties assignAttackProperties(attackType type){
+
+attackProperties attackPropertiesLookup(attackType type){
     switch(type){
-        case BASIC: // punch
+        case ATK_BASIC: // punch
         return {
             5.0, // Damage
             5.0, // KB
@@ -32,9 +33,8 @@ attackProperties assignAttackProperties(attackType type){
             {1, 1, 2, 2, 8}, // Frame data
             {false, false, false, true, false} // Active Frames
         };
-        
         break;
-        case KICK: // kick
+        case ATK_KICK: // kick
         return{
             8.5,
             3, 
@@ -46,7 +46,7 @@ attackProperties assignAttackProperties(attackType type){
             {false, false, false, true, false}
         };
         break; // projectile cast
-        case PROJECTILE_CAST:
+        case ATK_PROJECTILE_CAST:
         return{
             3.0,
             4.0,
@@ -58,7 +58,7 @@ attackProperties assignAttackProperties(attackType type){
             {false, false, false, true, false}
         };
         break;
-        case PROJECTILE:
+        case ATK_PROJECTILE:
             return{
                 6.5,
                 3.0,
@@ -72,3 +72,7 @@ attackProperties assignAttackProperties(attackType type){
         break;
     }
 }
+
+// int* getHitboxDim(attackType type){
+
+// }
