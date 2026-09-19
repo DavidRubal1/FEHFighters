@@ -122,7 +122,7 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
 // plays the animation of the projectile given the player color
 void attack::playProjectileAnimation(int color){
     animation projectileAnimator(color);
-    projectileAnimator.playAnimation(projectile.fileName, positionX, positionY, direction, projectile.finalFrameNum, projectile.frameLength, projectile.looping, projectile.ID);
+    projectileAnimator.playAnimation(projectile, positionX, positionY, direction);
 }
 
 // returns the attack's type (0 = punch, 1 = kick, 2 = cast)

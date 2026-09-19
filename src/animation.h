@@ -7,6 +7,10 @@ struct animationType{
     int frameLength = 1; // how long to hold the current frame for
 };
 
+enum animationID{
+    IDLE, CROUCH, BASIC, KICK, CAST, DASH, 
+}
+
 
 // class and all functions written by David Rubal
 class animation{
@@ -21,6 +25,7 @@ class animation{
     private:
         int currentAnimationID = -1;
         int color;
+        animationType currentAnimation;
         timer animationTimer;
         timer holdTime;
         FEHImage drawAnimation;
@@ -44,6 +49,8 @@ void animation::resetTimer(){
 // plays a frame of animation given info about the animation
 // animation path must follow ./graphics/Animations/Player(Color)/(Direction)/
 void animation::playAnimation(animationType animationInfo, int posX, int posY, int direction){
+    currentAnimation = animationInfo;
+
     // gradually builds the file path
     char filePath[64] = "./graphics/Animations";
     // if the animation ID has changed, the reset the animation Timer
@@ -97,8 +104,11 @@ void animation::playAnimation(animationType animationInfo, int posX, int posY, i
 // plays a frame of animation given info about the animation
 // made for non-player-bound directionless animations (double jump)
 void animation::playAnimation(animationType animationInfo, int posX, int posY){
+    currentAnimation = animationInfo;
+
     //same functionality as the function above, but without the player color and direction directories
     char filePath[64] = "./graphics/Animations";
+    // if the animation 
     if(currentAnimationID != animationInfo.ID){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(animationInfo.finalFrameNum);

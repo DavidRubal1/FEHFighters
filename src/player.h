@@ -1,6 +1,6 @@
 class player{
     public:
-        player(bool AI, Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
+        player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack,Key kickAttack, Key projectileAttack, int startingX, int startingY,  int color);
         void generalPlayerMovementControl();
         void dash(int direction);
         void jump();
@@ -163,11 +163,12 @@ class player{
         // Frame timing arrays for each attack (in number of frames)
         // punch: frames 0-4 timing, etc.
         // describes how long each frame of animation will last for
+        // Last frame in each are "lag frames"
         int FrameTiming[3][5] = 
         {
             {1, 1, 2, 2, 3}, // punch
             {2, 2, 3, 3, 2}, // kick
-            {4, 4, 6, 3, 3}  // cast
+            {4, 6, 3, 3, 3}  // cast
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
@@ -184,14 +185,14 @@ class player{
 // constructs player hitbox object, constructs the four attack objects with ID, size and position offset,
 // and constructs the animator objects that will play the player's animations
 /* written by David Rubal*/
-player::player(bool AI, Key leftwards, Key rightwards, Key upwards, Key downwards, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
+player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
     punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 5, 3, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
-    left = leftwards;
-    right = rightwards;
-    up = upwards;
-    down = downwards;
+    this->left = left;
+    this->right = right;
+    this->up = up;
+    this->down = down;
     startingPosX = startingX;
     startingPosY = startingY;
     positionX = startingX;
@@ -327,35 +328,40 @@ timer player::getIntangibilityTimer(){
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
     // written by David rubal
+
+    //--------TODO: Rework this section with less nesting and only one call to the animator-------//
+    // Possibly tie this to the movement code as well...
+
+    animationType currentAnimation = idleAnimation;
     
     // if not in hitstun
     if(!hitstunTimer.isActive()){
         // if not attacking
         if(!inAttackAnimation){
             // if not in attack lag or on ground
-            if(lagFrame == 0 && grounded){
+            if(lagFrame == 0 || grounded){
                     // if holding left or right and not crouch but not both left and right
                     if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
                         || AIHorizontalDirection > -1){ 
-                        // Dash animation
-                        playerAnimator.playAnimation(dashAnimation, positionX, positionY, direction);
+                        
+                        currentAnimation = dashAnimation;
                     } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
-                        // Crouch animation
-                        playerAnimator.playAnimation(crouchAnimation, positionX, positionY, direction);
+                        
+                        currentAnimation = crouchAnimation;
                     }else{
                         // idle animation
-                        playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
+                        // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
                     }
                     //airborne, still using idle animation
-                    playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
+                    // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
             } else{
                 // in end lag, using idle animation
-                playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
+                // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
             }
         }
     }else{
         // in hitstun, using idle animation
-        playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
+        // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
     }
     
     // play double jump animation
@@ -406,7 +412,7 @@ void player::playAnimations(){
         }
         offsetPositionY = positionY;
         // plays the attack animation
-        playerAnimator.playAnimation((*currentAttackAnimation).fileName, offsetPositionX, offsetPositionY, direction, (*currentAttackAnimation).finalFrameNum, (*currentAttackAnimation).frameLength, (*currentAttackAnimation).looping, (*currentAttackAnimation).ID); 
+        playerAnimator.playAnimation(*currentAttackAnimation, offsetPositionX, offsetPositionY, direction); 
     
         // Update attack animation
         attackAnimationTimer++;
@@ -587,97 +593,98 @@ void player::jump(){
 // general input handler for player movement
 /* written by David Rubal*/
 void player::generalPlayerMovementControl(){
-    // if not in hitstun, allow movement inputs
-    if(!hitstunTimer.isActive()){
-        // grounded movement
-        if(grounded){
-            // not in attack or endlag
-            if(lagFrame <= 0 && !inAttackAnimation){
-                // if not crouching or holding both left and right
-                if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
-                    || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
-                    // if not right after a dash
-                    if(!inDashLag){
-                        // move left
-                        if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
-                            direction = -1;
-                            if(velocityX >= 0){
-                                // dash if turning around or stationary
-                                dash(direction);
-                            }else{
-                                // continue left
-                                velocityX -= accelerationX;
-                            }
-                        }
-                        // move right
-                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
-                            direction = 1;
-                            if(velocityX <= 0){
-                                dash(direction);
-                            }else{
-                                // continue right
-                                velocityX += accelerationX;
-                            }
-                            
-                        }
-                    }else{
-                        // allow for changing direction faced mid-dash
-                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
-                            direction = 1;
-                        }else if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
-                            direction = -1;
+    // if in hitstun, no movement allowed
+    if(hitstunTimer.isActive()) return;
+    
+    // grounded movement
+    if(grounded){
+        // not in attack or endlag
+        if(lagFrame <= 0 && !inAttackAnimation){
+            // if not crouching or holding both left and right
+            if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
+                || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
+                // if not right after a dash
+                if(!inDashLag){
+                    // move left
+                    if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
+                        direction = -1;
+                        if(velocityX >= 0){
+                            // dash if turning around or stationary
+                            dash(direction);
+                        }else{
+                            // continue left
+                            velocityX -= accelerationX;
                         }
                     }
-                }
-                //jump when on ground
-                if(Keyboard.isPressed(up) || AIVerticalDirection == 1){
-                    jump();
-                }
-            }
-        }else{ 
-            // airborne movement (grouded == false)
-            if(!Keyboard.isPressed({left, right})){
-                if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
-                    velocityX -= accelerationX * airspeedMod;
-                }
-                if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
-                    velocityX += accelerationX * airspeedMod;
-                }
-            }
-            // fast fall when down is pressed
-            if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !inJumpLag){
-                // increase gravity for fast fall
-                gravity = fastFallGravity;
-                inFastFall = true;
-            }
-            // if not in lag or in an attack
-            if(lagFrame <= 0 && !inAttackAnimation){
-                // use double jump when jumping in air
-                if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
-                    inFastFall = false;
-                    //increase gravity
-                    gravity = tempGravity;
-                    doubleJumpUsed = true;
-                    currentGravityForce = 0;
-                    velocityY =- (jumpForce-1); // double jump is slightly weaker than regular jump
-                    // save position to use for double jump rings animation
-                    doubleJumpX = positionX - 3;
-                    doubleJumpY = positionY + hitboxHeight - 1;
-                    // give a burst of speed in held direction
-                    if(!Keyboard.isPressed({left, right})){
-                        if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
-                            direction = -1;
-                            velocityX = 2.0 * direction;
+                    // move right
+                    if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
+                        direction = 1;
+                        if(velocityX <= 0){
+                            dash(direction);
+                        }else{
+                            // continue right
+                            velocityX += accelerationX;
                         }
-                        if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
-                            direction = 1;
-                            velocityX = 2.0 * direction;  
-                        }
+                        
+                    }
+                }else{
+                    // allow for changing direction faced mid-dash
+                    if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
+                        direction = 1;
+                    }else if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
+                        direction = -1;
+                    }
+                }
+            }
+            //jump when on ground
+            if(Keyboard.isPressed(up) || AIVerticalDirection == 1){
+                jump();
+            }
+        }
+    }else{ 
+        // airborne movement (grouded == false)
+        if(!Keyboard.isPressed({left, right})){
+            if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
+                velocityX -= accelerationX * airspeedMod;
+            }
+            if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
+                velocityX += accelerationX * airspeedMod;
+            }
+        }
+        // fast fall when down is pressed
+        if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !inJumpLag){
+            // increase gravity for fast fall
+            gravity = fastFallGravity;
+            inFastFall = true;
+        }
+        // if not in lag or in an attack
+        if(lagFrame <= 0 && !inAttackAnimation){
+            // use double jump when jumping in air
+            if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
+                inFastFall = false;
+                //increase gravity
+                gravity = tempGravity;
+                doubleJumpUsed = true;
+                currentGravityForce = 0;
+                velocityY =- (jumpForce-1); // double jump is slightly weaker than regular jump
+                // save position to use for double jump rings animation
+                doubleJumpX = positionX - 3;
+                doubleJumpY = positionY + hitboxHeight - 1;
+                // give a burst of speed in held direction
+                if(!Keyboard.isPressed({left, right})){
+                    if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
+                        direction = -1;
+                        velocityX = 2.0 * direction;
+                    }
+                    if(Keyboard.isPressed(right) || AIHorizontalDirection == 1){
+                        direction = 1;
+                        velocityX = 2.0 * direction;  
                     }
                 }
             }
         }
     }
+    
 }
 
 // resets the player to the grounded state
