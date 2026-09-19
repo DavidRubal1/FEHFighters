@@ -86,8 +86,6 @@ FEHIcon::Icon standardBackBtn(){
 
     float x, y;
     while(!(LCD.Touch(&x,&y) && backBtn.Pressed(x, y, 0))) {};
-    
-    
  }
  
 
@@ -152,10 +150,10 @@ void statsScreen(data *gameData){
     multiplayerButton.SetProperties("Two Player", 80, 160, 158, 30, WHITE, WHITE);
 
     // still images for characters to display during countdown and during mode select
-    FEHImage RedCountdown;
-    RedCountdown.Open("./graphics/Animations/PlayerRed/Right/Idle/Idle0.png");
-    FEHImage BlueCountdown;
-    BlueCountdown.Open("./graphics/Animations/PlayerBlue/Left/Idle/Idle0.png");
+    FEHImage RedIdleRight;
+    RedIdleRight.Open("./graphics/Animations/PlayerRed/Right/Idle/Idle0.png");
+    FEHImage BlueIdleLeft;
+    BlueIdleLeft.Open("./graphics/Animations/PlayerBlue/Left/Idle/Idle0.png");
 
     singlePlayerButton.Draw();
     multiplayerButton.Draw();
@@ -164,9 +162,9 @@ void statsScreen(data *gameData){
     LCD.WriteAt("FEH Fighters", 10, 10);
     LCD.DrawHorizontalLine(38, 3, 190);
     LCD.SetFontScale(1);
-    RedCountdown.Draw(150, 80);
-    RedCountdown.Draw(140, 140);
-    BlueCountdown.Draw(160, 140);
+    RedIdleRight.Draw(150, 80);
+    RedIdleRight.Draw(140, 140);
+    BlueIdleLeft.Draw(160, 140);
     LCD.WriteAt("Choose a Mode", 82, 50);
     backBtn.Draw();
 

@@ -99,6 +99,7 @@ class player{
         bool inDashLag = false;
         // keeps track of time spent in a dash
         float dashLagTimerMax = 4;
+        //TODO: Change this to a timer item?
         float dashLagTimer = 0;
         
         // animation player to draw the player's sprites for any given animation
@@ -326,43 +327,40 @@ timer player::getIntangibilityTimer(){
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
     // written by David rubal
+    
     // if not in hitstun
     if(!hitstunTimer.isActive()){
         // if not attacking
         if(!inAttackAnimation){
-            // if not in attack lag
-            if(lagFrame == 0){
-                // if standing on ground
-                if(grounded){
+            // if not in attack lag or on ground
+            if(lagFrame == 0 && grounded){
                     // if holding left or right and not crouch but not both left and right
                     if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
                         || AIHorizontalDirection > -1){ 
                         // Dash animation
-                        playerAnimator.playAnimation(dashAnimation.fileName, positionX, positionY, direction, dashAnimation.finalFrameNum, 1, dashAnimation.looping, dashAnimation.ID);
+                        playerAnimator.playAnimation(dashAnimation, positionX, positionY, direction);
                     } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
                         // Crouch animation
-                        playerAnimator.playAnimation(crouchAnimation.fileName, positionX, positionY, direction, crouchAnimation.finalFrameNum, 1, crouchAnimation.looping, crouchAnimation.ID);
+                        playerAnimator.playAnimation(crouchAnimation, positionX, positionY, direction);
                     }else{
                         // idle animation
-                        playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
+                        playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
                     }
-                }else{
                     //airborne, still using idle animation
-                    playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
-                }
+                    playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
             } else{
                 // in end lag, using idle animation
-                playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
+                playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
             }
         }
     }else{
         // in hitstun, using idle animation
-        playerAnimator.playAnimation(idleAnimation.fileName, positionX, positionY, direction, idleAnimation.finalFrameNum, idleAnimation.frameLength, idleAnimation.looping, idleAnimation.ID );
+        playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
     }
     
     // play double jump animation
     if(doubleJumpUsed){
-        doubleJumpAnimator.playAnimation(doubleJumpAnimation.fileName, doubleJumpX, doubleJumpY, doubleJumpAnimation.finalFrameNum, 2, doubleJumpAnimation.looping, doubleJumpAnimation.ID);
+        doubleJumpAnimator.playAnimation(doubleJumpAnimation, doubleJumpX, doubleJumpY);
     }else{
         // resets the animator when player is grounded
         doubleJumpAnimator.resetTimer();
