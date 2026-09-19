@@ -18,7 +18,6 @@ class player{
         attack* getCurrentAttack();
         animationType* getCurrentAttackAnimation();
         hitbox getHitbox();
-        int lagFrame = 0;
         float getDamage();
         int remainingLives = 3;
         bool gameOver = false;
@@ -166,9 +165,9 @@ class player{
         // Last frame in each are "lag frames"
         int FrameTiming[3][5] = 
         {
-            {1, 1, 2, 2, 3}, // punch
-            {2, 2, 3, 3, 2}, // kick
-            {4, 6, 3, 3, 3}  // cast
+            {1, 1, 2, 2, 8}, // punch
+            {2, 2, 3, 3, 9}, // kick
+            {4, 6, 3, 3, 6}  // cast
         };
         
         //Hitbox activation arrays for each attack (which frames deal damage)
@@ -252,7 +251,6 @@ void player::getHit(attack* activeAttack){
     // scale force based on current damage and given knockback
     float force = (((0.1 * (damage / 100)))* 50 * (*activeAttack).getKBScaling()) + (*activeAttack).getKnockback();
     // reset timing varibles before entering hitstun, or move those timers into a separate function
-    lagFrame = 0;
     hitstunTimer.resetTimer();
     // set hitstun time based on scaling
     hitstunTimer.changeTimerMax((*activeAttack).getHitstun()  + (*activeAttack).getHitstunScaling()  * damage);
@@ -297,10 +295,7 @@ void player::updateTimers(){
             jumpLagTimer = 0;
         }
     }
-    // lagFrame timer, prevents the player from acting after attacking
-    if(lagFrame > 0){
-        lagFrame--;
-    }
+
     // hitstun timer, prevents the player from acting after being attacked
     if(hitstunTimer.isActive()){
         hitstunTimer.incrementTimer();
@@ -339,7 +334,7 @@ void player::playAnimations(){
         // if not attacking
         if(!inAttackAnimation){
             // if not in attack lag or on ground
-            if(lagFrame == 0 || grounded){
+            if(grounded){
                     // if holding left or right and not crouch but not both left and right
                     if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
                         || AIHorizontalDirection > -1){ 
@@ -417,14 +412,6 @@ void player::playAnimations(){
         // Update attack animation
         attackAnimationTimer++;
         if(attackAnimationTimer >= totalDuration){
-            // put the player in lag after an attack
-            if(currentAttackType == 0){
-                lagFrame = 5;  // set lag after attack ends
-            }else if(currentAttackType == 1){
-                lagFrame = 7;
-            }else if(currentAttackType == 2){
-                lagFrame = 3;
-            }
             // update attack info after it has finished
             inAttackAnimation = false;
             currentAttackType = -1;
@@ -553,8 +540,8 @@ void player::action(){
         bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
         AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
         
-        // Only allow attack if: button was just pressed AND lagFrame cooldown has expired AND no attack is already playing
-        if(isNewPress && lagFrame <= 0 && !inAttackAnimation)
+        // Only allow attack if: button was just pressed AND no attack is already playing
+        if(isNewPress && !inAttackAnimation)
         {
             if (Keyboard.isPressed(basic) || AIAttack == 0) 
             {
@@ -574,7 +561,6 @@ void player::action(){
             }
             inAttackAnimation = true;  //indicates attack animation is being played 
             attackAnimationTimer = 0;  // reset timer to beginning of animation
-            lagFrame = 1;  // Set lag to prevent immediate re-triggering (will be overwritten when animation ends)
 
         }
     }
@@ -599,7 +585,7 @@ void player::generalPlayerMovementControl(){
     // grounded movement
     if(grounded){
         // not in attack or endlag
-        if(lagFrame <= 0 && !inAttackAnimation){
+        if(!inAttackAnimation){
             // if not crouching or holding both left and right
             if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
                 || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
@@ -658,7 +644,7 @@ void player::generalPlayerMovementControl(){
             inFastFall = true;
         }
         // if not in lag or in an attack
-        if(lagFrame <= 0 && !inAttackAnimation){
+        if(!inAttackAnimation){
             // use double jump when jumping in air
             if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
                 inFastFall = false;
