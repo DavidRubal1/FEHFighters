@@ -187,8 +187,12 @@ class player{
 /* written by David Rubal*/
 player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(attackType::BASIC, 15, 10, 5, 4), kickAttack(attackType::KICK, 10, 12, 3, 4), projectileCast(attackType::PROJECTILE_CAST, 10, 5, 3, 6), projectileProjectile(attackType::PROJECTILE, 9, 8, -5, 8, 2.5),
-    playerAnimator(color), doubleJumpAnimator(color){
+        punch(attackType::BASIC, 15, 10, 5, 4), 
+        kickAttack(attackType::KICK, 10, 12, 3, 4), 
+        projectileCast(attackType::PROJECTILE_CAST, 10, 5, 3, 6), 
+        projectileProjectile(attackType::PROJECTILE, 9, 8, -5, 8, 2.5),
+        playerAnimator(color), 
+        doubleJumpAnimator(color){
     this->left = left;
     this->right = right;
     this->up = up;

@@ -1,12 +1,3 @@
-struct frameData{
-    std::vector<int> frameTimings;
-    std::vector<bool> activeFrames;
-};
-
-enum attackType{
-    BASIC, KICK, PROJECTILE_CAST, PROJECTILE
-};
-
 
 /*class written by Charlie Limbert and David Rubal*/
 class attack {
@@ -41,19 +32,6 @@ class attack {
         // TODO: integrate this into the posx and posy sent initially?
         int playerHitboxLength = 14; // used to offset attack position
 
-        // how much damage the attack deals
-        float damage;
-        // base amount of how much the attack will launch the opponent away
-        float knockback;
-        // angle of knockback
-        float angle;
-        // how much the knockback scale with the other player's damage
-        float KBscaling;
-        // how many frames of hitstun the opponent will be subjected to 
-        int hitstunFramesBase;
-        // how much the opponent's damage will increase the hitstun they recieve
-        float hitstunScaling;
-
         // projectile speed variables
         float velocityX;
         float velocityY;
@@ -63,10 +41,16 @@ class attack {
         int hitboxLength;
         
         // attack state
+        //TODO: REPLACE THIS WITH THE ACTIVE FRAMES VECTOR
         bool active = false;
+
+        attackProperties properties;
         
         // hitbox for attack
         hitbox attackHitbox;
+
+        // TODO: figure out why this is here
+        // -> this should be a separate entity from the player
         animationType projectile = {"/Projectile/", 1, true, 5, 1};
 };
 
@@ -79,33 +63,8 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->hitboxLength = hitLength;
     this->offX = offsetX;
     this->offY = offsetY;
-    // define the qualities of the attack based on its type
-    switch(type){
-        case 0: // punch
-        damage = 5.0;
-        knockback = 5.0;
-        angle = .89;
-        KBscaling = 1.0;
-        hitstunFramesBase = 6;
-        hitstunScaling = 0.22;
-        break;
-        case 1: // kick
-        damage = 8.5;
-        knockback = 3;
-        angle = 0.4;
-        KBscaling = 2.5;
-        hitstunFramesBase = 5;
-        hitstunScaling = 0.2;
-        break; // projectile cast
-        case 2:
-        damage = 3.0;
-        knockback = 4.0;
-        angle = 0.6;
-        KBscaling = 1.5;
-        hitstunFramesBase = 5;
-        hitstunScaling = 0.1;
-        break;
-    }
+
+    this->properties = assignAttackProperties(type);    
 }
 
 // projectile constructor
@@ -117,13 +76,9 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->offX = offsetX;
     this->offY = offsetY;
     this->velocityX = velX;
-    damage = 6.5;
-    knockback = 3.0;
-    angle = 0.9;
-    KBscaling = 2.7;
-    hitstunFramesBase = 13;
-    hitstunScaling = 0.1;
+    
 
+    //TODO: find out why this code it here and what it does
     strcpy(projectile.fileName, "/Projectile/");
     projectile.looping = true;
         
@@ -143,6 +98,10 @@ int attack::getAttackType(){
 // gets the direction of the attack (used for kb calculation)
 int attack::getDirection(){
     return direction;
+}
+
+attackProperties attack::getProperties(){
+    return properties;
 }
 
 // gets the damage of the attack
