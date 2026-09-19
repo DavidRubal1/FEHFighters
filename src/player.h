@@ -152,6 +152,7 @@ class player{
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
+        int currentAnimationType = animationName::IDLE;
         int currentAttackType = -1;  //(-1 = none, 0 = punch, 1 = kick, etc.)
         int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
         bool AttackPressedLastFrame = false;  //track previous frame's button state
@@ -186,7 +187,7 @@ class player{
 /* written by David Rubal*/
 player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-    punch(0, 15, 10, 5, 4), kickAttack(1, 10, 12, 3, 4), projectileCast(2, 10, 5, 3, 6), projectileProjectile(3, 9, 8, -5, 8, 2.5),
+    punch(attackType::BASIC, 15, 10, 5, 4), kickAttack(attackType::KICK, 10, 12, 3, 4), projectileCast(attackType::PROJECTILE_CAST, 10, 5, 3, 6), projectileProjectile(attackType::PROJECTILE, 9, 8, -5, 8, 2.5),
     playerAnimator(color), doubleJumpAnimator(color){
     this->left = left;
     this->right = right;
@@ -330,33 +331,18 @@ void player::playAnimations(){
     animationType currentAnimation = idleAnimation;
     
     // if not in hitstun
-    if(!hitstunTimer.isActive()){
+    if(!hitstunTimer.isActive() && !inAttackAnimation && grounded){
         // if not attacking
-        if(!inAttackAnimation){
-            // if not in attack lag or on ground
-            if(grounded){
-                    // if holding left or right and not crouch but not both left and right
-                    if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
-                        || AIHorizontalDirection > -1){ 
-                        
-                        currentAnimation = dashAnimation;
-                    } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
-                        
-                        currentAnimation = crouchAnimation;
-                    }else{
-                        // idle animation
-                        // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
-                    }
-                    //airborne, still using idle animation
-                    // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
-            } else{
-                // in end lag, using idle animation
-                // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
-            }
+        // if not in attack lag or on ground
+        // if holding left or right and not crouch but not both left and right
+        if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
+            || AIHorizontalDirection > -1){ 
+            
+            currentAnimation = dashAnimation;
+        } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
+            
+            currentAnimation = crouchAnimation;
         }
-    }else{
-        // in hitstun, using idle animation
-        // playerAnimator.playAnimation(idleAnimation, positionX, positionY, direction);
     }
     
     // play double jump animation
@@ -425,6 +411,8 @@ void player::playAnimations(){
             }
         }
     }
+
+    playerAnimator.playAnimation(currentAnimation, positionX, positionY, direction);
 }
 
 

@@ -1,8 +1,7 @@
 class data{
     public:
         data();
-        enum pages{START, STATS, INSTRUCTIONS, CREDITS, MAIN, SINGLEPLAYER, MULTIPLAYER};
-        // 
+        
         FEHImage MenuArt;
         int redWins, blueWins, numGames;
         bool singlePlayerMode, gameStarted;

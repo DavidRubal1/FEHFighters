@@ -1,3 +1,6 @@
+
+//enum pages{START, STATS, INSTRUCTIONS, CREDITS, MAIN, SINGLEPLAYER, MULTIPLAYER};
+
 FEHIcon::Icon standardBackBtn();
 void mainMenu(data *gameData);
 void instructions(data *gameData);

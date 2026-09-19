@@ -1,8 +1,18 @@
+struct frameData{
+    std::vector<int> frameTimings;
+    std::vector<bool> activeFrames;
+};
+
+enum attackType{
+    BASIC, KICK, PROJECTILE_CAST, PROJECTILE
+};
+
+
 /*class written by Charlie Limbert and David Rubal*/
 class attack {
     public:
-        attack(int attackType,int hitHeight, int hitLength, int offsetX, int offsetY);
-        attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY, float velX);
+        attack(attackType type ,int hitHeight, int hitLength, int offsetX, int offsetY);
+        attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);
@@ -23,11 +33,12 @@ class attack {
         
     private:
         // attack properties
-        int attackType;  // 0 = punch, 1 = kick, 2 = projectile.
+        attackType type; 
         int direction;   // -1 = left, 1 = right
         int positionX;
         int positionY;
         int offX, offY; // given offsets for attack positions
+        // TODO: integrate this into the posx and posy sent initially?
         int playerHitboxLength = 14; // used to offset attack position
 
         // how much damage the attack deals
@@ -61,15 +72,15 @@ class attack {
 
 // Constructor
 /* written by Charlie Limbert and David Rubal*/
-attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY)
+attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY)
     : attackHitbox(hitHeight, hitLength){
-    this->attackType = attackType;
+    this->type = type;
     this->hitboxHeight = hitHeight;
     this->hitboxLength = hitLength;
     this->offX = offsetX;
     this->offY = offsetY;
     // define the qualities of the attack based on its type
-    switch(attackType){
+    switch(type){
         case 0: // punch
         damage = 5.0;
         knockback = 5.0;
@@ -98,9 +109,9 @@ attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int of
 }
 
 // projectile constructor
-attack::attack(int attackType, int hitHeight, int hitLength, int offsetX, int offsetY, float velX)
+attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX)
     : attackHitbox(hitHeight, hitLength){
-    this->attackType = attackType;
+    this->type = type;
     this->hitboxHeight = hitHeight;
     this->hitboxLength = hitLength;
     this->offX = offsetX;
@@ -127,7 +138,7 @@ void attack::playProjectileAnimation(int color){
 
 // returns the attack's type (0 = punch, 1 = kick, 2 = cast)
 int attack::getAttackType(){
-    return attackType;
+    return type;
 }
 // gets the direction of the attack (used for kb calculation)
 int attack::getDirection(){

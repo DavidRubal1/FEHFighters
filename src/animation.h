@@ -7,9 +7,9 @@ struct animationType{
     int frameLength = 1; // how long to hold the current frame for
 };
 
-enum animationID{
-    IDLE, CROUCH, BASIC, KICK, CAST, DASH, 
-}
+ enum animationName{
+     IDLE, CROUCH, BASIC, KICK, CAST, DASH
+ };
 
 
 // class and all functions written by David Rubal
