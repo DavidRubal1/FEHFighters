@@ -3,17 +3,16 @@
 class attack {
     public:
         attack(attackType type ,int hitHeight, int hitLength, int offsetX, int offsetY);
-        attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);
         void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
-        void moveProjectile(float velX);
-        float getXVelocity();
-        int getAttackType();
+
+
+        attackType getAttackType();
         int getDirection();
-        void playProjectileAnimation(int color);
+   
         bool isActive();
         attackProperties getProperties();
         int getCurrentFrame();
@@ -30,9 +29,7 @@ class attack {
         // TODO: integrate this into the posx and posy sent initially?
         int playerHitboxLength = 14; // used to offset attack position
 
-        // projectile speed variables
-        float velocityX;
-        float velocityY;
+
         
         // hitbox dimensions
         int hitboxHeight;
@@ -48,10 +45,6 @@ class attack {
         
         // hitbox for attack
         hitbox attackHitbox;
-
-        // TODO: figure out why this is here
-        // -> this should be a separate entity from the player
-        animationProperties projectile = {"/Projectile/", 1, true, 5, 1};
 };
 
 // Constructor
@@ -67,31 +60,17 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->properties = attackPropertiesLookup(type);    
 }
 
-// projectile constructor
-attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX)
-    : attackHitbox(hitHeight, hitLength){
-    this->type = type;
-    this->hitboxHeight = hitHeight;
-    this->hitboxLength = hitLength;
-    this->offX = offsetX;
-    this->offY = offsetY;
-    this->velocityX = velX;
-    this->properties = attackPropertiesLookup(type);    
-        
-}
+
 // "getters" written by David Rubal
 
-// plays the animation of the projectile given the player color
-void attack::playProjectileAnimation(int color){
-    animator projectileAnimator(color);
-    projectileAnimator.playAnimation(projectile, positionX, positionY, direction);
-}
+
 
 // returns the attack's type (0 = punch, 1 = kick, 2 = cast)
-int attack::getAttackType(){
+attackType attack::getAttackType(){
     return type;
 }
 // gets the direction of the attack (used for kb calculation)
+//TODO: change this to be the player's facing direction???
 int attack::getDirection(){
     return direction;
 }
@@ -116,10 +95,7 @@ hitbox attack::getHitbox(){
     return attackHitbox;
 }
 
-// gets the velocity of the attack (projecile only)
-float attack::getXVelocity(){
-    return velocityX;
-}
+
 
 // Update the position of the attack
 /*coded by Charlie Limbert*/
@@ -136,14 +112,7 @@ void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitbox
     updateAttackHitbox(attackHitboxActive);
 }
 
-void attack::moveProjectile(float velX){
-    if(positionX > 0 && positionX < 320){
-        positionX += velX * direction;
-        updateAttackHitbox(true);
-    }else{
-        active = false;
-    }
-}
+
 
 // changes the active state of the attack to the parameter's state
 void attack::updateActiveState(bool state){

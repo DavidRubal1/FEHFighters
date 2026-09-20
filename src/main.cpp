@@ -10,8 +10,9 @@
 #include "data/animationData.h"
 #include "timer.h"
 #include "hitbox.h"
-#include "animation.h" // uses timer.h
+#include "animator.h" // uses timer.h
 #include "attack.h" // uses hitbox.h and animation.h
+#include "projectile.h"
 #include "player.h" // uses hitbox.h, attack.h, and animation.h
 #include "screens.h"
 

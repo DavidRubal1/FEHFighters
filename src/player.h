@@ -67,6 +67,8 @@ class player{
         attack punch;
         attack kickAttack;
         attack projectileCast;
+
+        // What do I do with you...
         attack projectileProjectile;
 
         // player velocity in each axis and direction (-1 == left, 1 == right)
@@ -147,7 +149,7 @@ class player{
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
         animationType currentAnimationType;
-        int currentAttackType = -1;  //(-1 = none, 0 = punch, 1 = kick, etc.)
+        attackType currentAttackType; 
         int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
         bool AttackPressedLastFrame = false;  //track previous frame's button state
        
@@ -181,10 +183,10 @@ class player{
 /* written by David Rubal*/
 player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-        punch(attackType::ATK_BASIC, 15, 10, 5, 4), 
-        kickAttack(attackType::ATK_KICK, 10, 12, 3, 4), 
-        projectileCast(attackType::ATK_PROJECTILE_CAST, 10, 5, 3, 6), 
-        projectileProjectile(attackType::ATK_PROJECTILE, 9, 8, -5, 8, 2.5),
+        punch(ATK_BASIC, 15, 10, 5, 4), 
+        kickAttack(ATK_KICK, 10, 12, 3, 4), 
+        projectileCast(ATK_PROJECTILE_CAST, 10, 5, 3, 6), 
+        projectileProjectile(ATK_PROJECTILE, 9, 8, -5, 8, 2.5),
         playerAnimator(color), 
         doubleJumpAnimator(color){
     this->left = left;
@@ -358,8 +360,16 @@ void player::playAnimations(){
         } 
 
 
-        int frameTime = 0;
-        animationProperties attackAnimation
+        animationProperties attackAnimation = animationPropertiesLookup(currentAnimationType);
+
+
+        // Set the frameLength property = the current value in the frame data array, change index accordingly
+        // count up until we reach the # for the current frame timing, then reset and go to next index 
+        // Or add up until the current frame = total frames
+        // Use counter built into attack class
+
+        // TODO: come back to this when attack grouping has been dealt with
+
 
 
         // Determine current frame based on timer
@@ -435,7 +445,9 @@ void player::manageHitboxes(player *otherPlayer){
     if(currentAttackType != -1){
         // gets the current attack to update position and check for overlap with other player
         attack* currentAttack = getCurrentAttack();
-        (*currentAttack).updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
+
+        // TODO: this should be done by the attack itself?
+        currentAttack->updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
         if(attackHitboxActive){
             checkAttackHits(otherPlayer, currentAttack);
         }
@@ -443,6 +455,7 @@ void player::manageHitboxes(player *otherPlayer){
     // checks for projectile overlap with other player, separate because projectiles have separate movement
     if(projectileProjectile.isActive()){
         checkAttackHits(otherPlayer, &projectileProjectile);
+        updateProjectile();
     }
 }
 
@@ -496,43 +509,41 @@ void player::dash(int direction){
 // get input for attacks and activate the respective attack 
 /*coded by Charlie Limbert*/
 void player::action(){
-    if(projectileProjectile.isActive()){
-        updateProjectile();
-    }
 
-    if(!hitstunTimer.isActive()){
-        // Detect button press (transition from not pressed to pressed)
-        bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile)
-                                || AIAttack >= 0);
+    if(hitstunTimer.isActive())return;
 
-        //prevents holding of attacks.
-        bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
-        AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
-        
-        // Only allow attack if: button was just pressed AND no attack is already playing
-        if(isNewPress && !inAttackAnimation)
+    // Detect button press (transition from not pressed to pressed)
+    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile)
+                            || AIAttack >= 0);
+
+    //prevents holding of attacks.
+    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
+    AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
+    
+    // Only allow attack if: button was just pressed AND no attack is already playing
+    if(isNewPress && !inAttackAnimation)
+    {
+        if (Keyboard.isPressed(basic) || AIAttack == 0) 
         {
-            if (Keyboard.isPressed(basic) || AIAttack == 0) 
-            {
-                currentAttackType = 0;// punch
-                punch.updateActiveState(true);
-
-            }
-            else if (Keyboard.isPressed(kick) || AIAttack == 1)
-            {
-                currentAttackType = 1; //kick
-                kickAttack.updateActiveState(true);
-            }
-            else if (Keyboard.isPressed(projectile) || AIAttack == 2)
-            {
-                currentAttackType = 2; //projectile cast
-                projectileCast.updateActiveState(true);
-            }
-            inAttackAnimation = true;  //indicates attack animation is being played 
-            attackAnimationTimer = 0;  // reset timer to beginning of animation
+            currentAttackType = 0;// punch
+            punch.updateActiveState(true);
 
         }
+        else if (Keyboard.isPressed(kick) || AIAttack == 1)
+        {
+            currentAttackType = 1; //kick
+            kickAttack.updateActiveState(true);
+        }
+        else if (Keyboard.isPressed(projectile) || AIAttack == 2)
+        {
+            currentAttackType = 2; //projectile cast
+            projectileCast.updateActiveState(true);
+        }
+        inAttackAnimation = true;  //indicates attack animation is being played 
+        attackAnimationTimer = 0;  // reset timer to beginning of animation
+
     }
+    
 }
 
 // the player jumps upwards

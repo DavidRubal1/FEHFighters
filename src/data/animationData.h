@@ -43,6 +43,9 @@ struct animationProperties{
             //Frame length should be overriden
             return {"/ProjectileCast/", calcTotalFrames(attackPropertiesLookup(ATK_PROJECTILE_CAST).frameData), false, type};
         break;
+        case ANI_PROJECTILE:
+            return {"/Projectile/", 1, true, 5, 1};
+        break;
 
 
         case ANI_DOUBLE_JUMP:
