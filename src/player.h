@@ -452,38 +452,21 @@ void player::dash(int direction){
 /*coded by Charlie Limbert*/
 void player::determineAction(){
 
+    //TODO: lift this out of here into another function to cover more at once
     if(hitstunTimer.isActive())return;
 
-    // Detect button press (transition from not pressed to pressed)
-    bool buttonPressed = (Keyboard.isPressed(basic) || Keyboard.isPressed(kick) ||Keyboard.isPressed(projectile)
-                            || AIAttack >= 0);
+    attack* currentAttack = getCurrentAttack();
 
-    //prevents holding of attacks.
-    bool isNewPress = buttonPressed && !AttackPressedLastFrame; //checks if button was just pressed or has been held.
-    AttackPressedLastFrame = buttonPressed;  // store current frame's button state for next frame comparison
-    
-    // Only allow attack if: button was just pressed AND no attack is already playing
-    if(isNewPress && !inAttackAnimation)
-    {
-        if (Keyboard.isPressed(basic) || AIAttack == 0) 
-        {
-            currentAttackType = BASIC;// punch
-            punch.updateActiveState(true);
-
+    if(currentAttack != NULL) {
+        if (Keyboard.isPressed(basic) || AIAttack == 0) {
+            currentAttackType = BASIC;
         }
-        else if (Keyboard.isPressed(kick) || AIAttack == 1)
-        {
-            currentAttackType = KICK; //kick
-            kickAttack.updateActiveState(true);
+        else if (Keyboard.isPressed(kick) || AIAttack == 1) {
+            currentAttackType = KICK;
         }
-        else if (Keyboard.isPressed(projectile) || AIAttack == 2)
-        {
-            currentAttackType = CAST; //projectile cast
-            projectileCast.updateActiveState(true);
+        else if (Keyboard.isPressed(projectile) || AIAttack == 2) {
+            currentAttackType = CAST; 
         }
-        inAttackAnimation = true;  //indicates attack animation is being played 
-        attackAnimationTimer = 0;  // reset timer to beginning of animation
-
     }
     
 }
