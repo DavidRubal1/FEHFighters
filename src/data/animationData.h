@@ -3,7 +3,7 @@ struct animationProperties{
     char fileName[32];
     int finalFrameNum; //the # of the last frame of the animation
     bool looping; // does the animation loop
-    int ID; // unique identifier to differentiate animations
+    action type; // unique identifier to differentiate animations
     // TODO: should this be moved out of the properties?
     int frameLength = 1; // how long to hold the current frame for
 };
@@ -42,12 +42,12 @@ struct animationProperties{
             return {"/ProjectileCast/", attackPropertiesLookup(CAST).frameData.size(), false, type};
         break;
         case PROJECTILE:
-            return {"/Projectile/", 1, true, 5, 1};
+            return {"/Projectile/", 1, true, type};
         break;
 
 
         case DOUBLE_JUMP:
-            return {"/DoubleJump/doubleJumpFrame", 3, false, 3};
+            return {"/DoubleJump/doubleJumpFrame", 3, false, type};
         break;
     }
  }

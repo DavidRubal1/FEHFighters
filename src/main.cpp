@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "FEHLCD.h"
 #include "FEHUtility.h"
 #include "FEHKeyboard.h"
@@ -20,6 +21,7 @@
 // Team G25-26
 // David Rubal and Charlie Limbert
 
+// Compile: mingw32-make
 
 int main()
 {

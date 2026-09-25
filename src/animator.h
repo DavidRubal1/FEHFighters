@@ -4,13 +4,14 @@ class animator{
     public:
         animator(int color);
         timer getTimer();
+        action getLastFrameType();
         int playAnimation(animationProperties properties, int posX, int posY, int direction);
         // directionless
         int playAnimation(animationProperties properties, int posX, int posY);
         void resetTimer();
 
     private:
-        int currentAnimationID = -1;
+        int type = -1;
         int color;
         animationProperties currentAnimation;
         timer animationTimer;
@@ -28,6 +29,11 @@ animator::animator(int color)
 timer animator::getTimer(){
     return animationTimer;
 }
+
+action animator::getLastFrameType(){
+    return currentAnimation.type;
+}
+
 // resets the animation timer
 void animator::resetTimer(){
     animationTimer.resetTimer();
@@ -42,11 +48,11 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
     // gradually builds the file path
     char filePath[64] = "./graphics/Animations";
     // if the animation ID has changed, the reset the animation Timer
-    if(currentAnimationID != properties.ID){
+    if(type != properties.type){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(properties.finalFrameNum);
         holdTime.resetTimer();
-        currentAnimationID = properties.ID;
+        type = properties.type;
     }
     // update whether the time is active or not (has reached max val or not)
     animationTimer.updateTimerState();
@@ -97,12 +103,12 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
 
     //same functionality as the function above, but without the player color and direction directories
     char filePath[64] = "./graphics/Animations";
-    // if the animation 
-    if(currentAnimationID != properties.ID){
+    // if the animation has changed
+    if(type != properties.type){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(properties.finalFrameNum);
         holdTime.resetTimer();
-        currentAnimationID = properties.ID;
+        type = properties.type;
     }
     animationTimer.updateTimerState();
     if(properties.looping && !animationTimer.isActive()){

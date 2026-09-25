@@ -67,7 +67,7 @@ class player{
         attack punch;
         attack kickAttack;
         attack projectileCast;
-        attack *currentAttack;
+        attack *currentAttack = NULL;
         // TODO: move these attacks to Moveset class, throw projectile spawner in there as well 
         // What do I do with you...
         //attack projectileProjectile;
@@ -145,7 +145,6 @@ class player{
         
         // attack animation variables
         action currentAnimationType;
-        action currentAttackType; 
 
         bool AttackPressedLastFrame = false;  //track previous frame's button state
         
@@ -338,8 +337,24 @@ void player::playAnimations(){
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
     if(currentAttack != NULL && !hitstunTimer.isActive()){
         
+        action lastFrame = playerAnimator.getLastFrameType();
+        // If the attack was playing on the last frame
+        if(lastFrame == currentAttack->getAttackType()){
+            //TODO: Add a check to make sure another attack is performed directly after another ends
+
+            // I want to increment current frame when the animator's animation frame increments as well
+            // Then I set the new frameData for that frame 
+            // Make sure to reset currentAttack to NULL and the interal attack's current frame to 0 as well when the attack ends
+
+            // I could also try to track frames inside of attack.h itself
+
+        } else {
+
+        }
         currentAnimationProperties = animationPropertiesLookup(currentAttack->getAttackType());
         currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
+
+        //TODO: issues now are currentFrame of attacks are not being updated and it is hard to tell when an attack is over outside of the animator class
 
         //TODO fix offset weirdness across the board
         // offsets the attack by a certain amount to align the animation with the player's hitbox
@@ -364,7 +379,7 @@ void player::playAnimations(){
 //updates position of attack hitboxes and checks for overlap with other player
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
-    if(currentAttackType != -1){
+    if(currentAttack != NULL){
         // gets the current attack to update position and check for overlap with other player
         // attack* currentAttack = getCurrentAttack();
 

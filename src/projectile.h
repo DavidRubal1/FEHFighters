@@ -2,7 +2,6 @@ class projectile : public attack{
     public:
         projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color);
         void playProjectileAnimation(int color);
-        void playProjectileAnimation(int color);
         void moveProjectile(float velX);
         float getXVelocity();
     private:

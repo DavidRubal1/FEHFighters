@@ -137,13 +137,13 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
         }
         // debug code for viewing active attack hitboxes
         // intentionally left commented for future debugging
-        // if(attackHitboxActive){
-        //     if(active){
-        //         attackHitbox.debugDrawHitbox(RED);
-        //     }else{
-        //         attackHitbox.debugDrawHitbox(WHITE);
-        //     }
-        // }
+        if(attackHitboxActive){
+            if(isActive()){
+                attackHitbox.debugDrawHitbox(RED);
+            }else{
+                attackHitbox.debugDrawHitbox(WHITE);
+            }
+        }
 }
 
 // Check if this attack collides with another hitbox, used for testing player collison with attacks
