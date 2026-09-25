@@ -35,7 +35,6 @@ class attack {
         int hitboxLength;
         
         // whether attack is being used or not
-        //TODO: REPLACE THIS WITH THE ACTIVE FRAMES VECTOR
         // Attack should know its current frame being played 
         // bool active = false;
 
