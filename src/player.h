@@ -15,9 +15,9 @@ class player{
         void resetIfOffscreen();
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
         void determineAction();
-        attack* getCurrentAttack();
         hitbox getHitbox();
         float getDamage();
+        action getCurrentAttack();
         int remainingLives = 3;
         bool gameOver = false;
         std::vector<int> getXYPosition();
@@ -67,6 +67,7 @@ class player{
         attack punch;
         attack kickAttack;
         attack projectileCast;
+        attack *currentAttack;
         // TODO: move these attacks to Moveset class, throw projectile spawner in there as well 
         // What do I do with you...
         //attack projectileProjectile;
@@ -299,8 +300,6 @@ timer player::getIntangibilityTimer(){
 void player::playAnimations(){
     // written by David rubal
 
-    //TODO: throw this elsewhere to update every frame?
-    attack* currentAttack = getCurrentAttack();
 
     //--------TODO: Rework this section with less nesting and only one call to the animator-------//
     // Possibly tie this to the movement code as well...
@@ -362,31 +361,12 @@ void player::playAnimations(){
 }
 
 
-// returns pointer to current attack
-/* written by David Rubal*/
-attack* player::getCurrentAttack(){
-    switch(currentAttackType){
-        case BASIC: 
-        return &punch;
-        break;
-        case KICK: 
-        return &kickAttack;
-        break;
-        case CAST:
-        return &projectileCast;
-        break;
-        default:
-        return NULL;
-        break;
-    }
-}
-
 //updates position of attack hitboxes and checks for overlap with other player
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
     if(currentAttackType != -1){
         // gets the current attack to update position and check for overlap with other player
-        attack* currentAttack = getCurrentAttack();
+        // attack* currentAttack = getCurrentAttack();
 
         // TODO: this should be done by the attack itself?
         currentAttack->updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
@@ -449,24 +429,33 @@ void player::dash(int direction){
 }
 
 // get input for attacks and activate the respective attack 
+// TODO: Combine this with movement action function?
 /*coded by Charlie Limbert*/
 void player::determineAction(){
 
     //TODO: lift this out of here into another function to cover more at once
     if(hitstunTimer.isActive())return;
 
-    attack* currentAttack = getCurrentAttack();
-
-    if(currentAttack != NULL) {
+    if(currentAttack == NULL) {
         if (Keyboard.isPressed(basic) || AIAttack == 0) {
-            currentAttackType = BASIC;
+            currentAttack = &punch;
         }
         else if (Keyboard.isPressed(kick) || AIAttack == 1) {
-            currentAttackType = KICK;
+            currentAttack = &kickAttack;
         }
         else if (Keyboard.isPressed(projectile) || AIAttack == 2) {
-            currentAttackType = CAST; 
+            currentAttack = &projectileCast;
         }
+    }
+    
+}
+
+// Returns the current attack action type if the player is attacking. If not, returns the IDLE action
+action player::getCurrentAttack(){
+    if(currentAttack == NULL){
+        return IDLE;
+    } else {
+        return currentAttack->getAttackType();
     }
     
 }
@@ -482,6 +471,7 @@ void player::jump(){
 }
 
 // general input handler for player movement
+//TODO: make this make sense
 /* written by David Rubal*/
 void player::generalPlayerMovementControl(){
     // if in hitstun, no movement allowed
@@ -490,7 +480,7 @@ void player::generalPlayerMovementControl(){
     // grounded movement
     if(grounded){
         // not in attack or endlag
-        if(!inAttackAnimation){
+        if(currentAttack == NULL){
             // if not crouching or holding both left and right
             if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
                 || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
@@ -549,7 +539,7 @@ void player::generalPlayerMovementControl(){
             inFastFall = true;
         }
         // if not in lag or in an attack
-        if(!inAttackAnimation){
+        if(currentAttack == NULL){
             // use double jump when jumping in air
             if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
                 inFastFall = false;
@@ -611,7 +601,7 @@ void player::enactPlayerMovement(){
     // if the player is not in hitstun
     if(!hitstunTimer.isActive()){
         // decay X-velocity exponentially when not moving horizontally
-        if(grounded && (Keyboard.isPressed(down) || AIVerticalDirection == 0) || ( !isAI && !Keyboard.areAnyPressed({left,right}) || AIHorizontalDirection == -1)  || inAttackAnimation){
+        if(grounded && (Keyboard.isPressed(down) || AIVerticalDirection == 0) || ( !isAI && !Keyboard.areAnyPressed({left,right}) || AIHorizontalDirection == -1)  || currentAttack != NULL){
             velocityX *= pow(velocityXDecay, abs(velocityX));
         }else{
             // the player is moving, do not decay speed until movement has stopped
@@ -690,8 +680,9 @@ void player::determineAIDecisions(player *humanPlayer){
         targetY = playerY;
     }
     // if the human player is attacking, see if the AI can react and move away out of the player's range
-    if((*humanPlayer).inAttackAnimation && !AIReactionTimer.isActive()){
-        if((*humanPlayer).getCurrentAttack()->getAttackType() < 2){
+    action humanAction = humanPlayer->getCurrentAttack();
+    if(humanAction != IDLE && !AIReactionTimer.isActive()){
+        if(humanAction == BASIC || humanAction == KICK){
             if(distanceToPlayerX > 0){
                 targetX = targetX + safeRangeX;
             }else{
@@ -699,7 +690,7 @@ void player::determineAIDecisions(player *humanPlayer){
             }
         }
         // if the player is casting a projectile, jump to avoid it
-        if(grounded && (*humanPlayer).getCurrentAttack()->getAttackType() == 2){
+        if(grounded && humanAction == CAST){
             // avoid the y-level that the projectile was fired from
             if(playerY > 150){
                 targetY = 130;
