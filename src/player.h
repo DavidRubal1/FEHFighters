@@ -14,7 +14,7 @@ class player{
         void playAnimations();
         void resetIfOffscreen();
         void checkAttackHits(player *otherPlayer, attack *activeAttack);
-        void action();
+        void determineAction();
         attack* getCurrentAttack();
         hitbox getHitbox();
         float getDamage();
@@ -105,10 +105,6 @@ class player{
         // animation player to draw the player's sprites for any given animation
         animator playerAnimator;
 
-        // animation types for attack animations, info is passed through animation player
-        // animationType punchAnimation;
-        // animationType kickAnimation;
-        // animationType projectileCastAnimation;
 
         // separate animator and animation type for double jump to allow for another animation to play during double jump
         animator doubleJumpAnimator;
@@ -148,8 +144,8 @@ class player{
         
         // attack animation variables
         bool inAttackAnimation = false;  // is any attack currently animating
-        animationType currentAnimationType;
-        attackType currentAttackType; 
+        action currentAnimationType;
+        action currentAttackType; 
         int attackAnimationTimer = 0;  // tracks elapsed time in current attack animation
         bool AttackPressedLastFrame = false;  //track previous frame's button state
        
@@ -183,10 +179,10 @@ class player{
 /* written by David Rubal*/
 player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, Key kickAttack, Key projectileAttack, int startingX, int startingY, int color) 
     : playerHitbox(hitboxHeight, hitboxLength, positionX, positionY), 
-        punch(ATK_BASIC, 15, 10, 5, 4), 
-        kickAttack(ATK_KICK, 10, 12, 3, 4), 
-        projectileCast(ATK_PROJECTILE_CAST, 10, 5, 3, 6), 
-        projectileProjectile(ATK_PROJECTILE, 9, 8, -5, 8, 2.5),
+        punch(BASIC, 15, 10, 5, 4), 
+        kickAttack(KICK, 10, 12, 3, 4), 
+        projectileCast(CAST, 10, 5, 3, 6), 
+        projectileProjectile(PROJECTILE, 9, 8, -5, 8, 2.5),
         playerAnimator(color), 
         doubleJumpAnimator(color){
     this->left = left;
@@ -257,6 +253,7 @@ void player::getHit(attack* activeAttack){
 }
 
 // move and draw projectile
+// ******** MOVE OUT OF PLAYER **********
 /* written by David Rubal*/
 void player::updateProjectile(){
     // change projectile position by the projectile's velocity
@@ -313,30 +310,31 @@ timer player::getIntangibilityTimer(){
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
     // written by David rubal
+    attack* currentAttack = getCurrentAttack();
 
     //--------TODO: Rework this section with less nesting and only one call to the animator-------//
     // Possibly tie this to the movement code as well...
 
-    currentAnimationType = ANI_IDLE;
+    currentAnimationType = IDLE;
     
     // if not in hitstun
-    if(!hitstunTimer.isActive() && !inAttackAnimation && grounded){
+    if(!hitstunTimer.isActive() && currentAttack == NULL && grounded){
         // if not attacking
         // if not in attack lag or on ground
         // if holding left or right and not crouch but not both left and right
         if((Keyboard.areAnyPressed({left, right}) & !Keyboard.isPressed(down) && (!Keyboard.isPressed({left, right})))
             || AIHorizontalDirection > -1){ 
             
-            currentAnimationType = ANI_DASH;
+            currentAnimationType = DASH;
         } else if(Keyboard.isPressed(down) || AIVerticalDirection == 0){
             
-            currentAnimationType = ANI_CROUCH;
+            currentAnimationType = CROUCH;
         }
     }
     
     // play double jump animation
     if(doubleJumpUsed){
-        doubleJumpAnimator.playAnimation(animationPropertiesLookup(ANI_DOUBLE_JUMP), doubleJumpX, doubleJumpY);
+        doubleJumpAnimator.playAnimation(animationPropertiesLookup(DOUBLE_JUMP), doubleJumpX, doubleJumpY);
     }else{
         // resets the animator when player is grounded
         doubleJumpAnimator.resetTimer();
@@ -345,22 +343,21 @@ void player::playAnimations(){
 
     // TODO: Rework attack animator
     //- use animationData.h file to get basic data, then get the frame times from attack properties
-
+    
     //attack animation 
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
-    if(inAttackAnimation && !hitstunTimer.isActive()){
+    if(currentAttack != NULL && !hitstunTimer.isActive()){
 
+        currentAnimationType = currentAttack->getAttackType();
         
-        if(punch.isActive()){
-            currentAnimationType = ANI_BASIC;
-        } else if(kickAttack.isActive()){
-            currentAnimationType = ANI_KICK;
-        } else if(projectileCast.isActive()){
-            currentAnimationType = ANI_CAST;
-        } 
-
 
         animationProperties attackAnimation = animationPropertiesLookup(currentAnimationType);
+
+
+
+        attackAnimation.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
+
+
 
 
         // Set the frameLength property = the current value in the frame data array, change index accordingly
@@ -371,26 +368,7 @@ void player::playAnimations(){
         // TODO: come back to this when attack grouping has been dealt with
 
 
-
-        // Determine current frame based on timer
-        int elapsedTime = 
-        attackHitboxActive = false;
-
-        for(int i = 0; i < 5; i++)
-        {
-            //TODO: this should be the job of the Attack itself?
-            //determines what frame the attack animation is on
-            if(attackAnimationTimer < elapsedTime + FrameTiming[currentAttackType][i])
-            {
-                //gets the length of the current animation frame
-                (*currentAttackAnimation).frameLength = FrameTiming[currentAttackType][i];
-                attackHitboxActive = FrameHasHitbox[currentAttackType][i]; //sets hitbox to active or not based on frame array.
-                break;
-            }
-            elapsedTime += FrameTiming[currentAttackType][i];
-        }
-
-
+        //TODO fix offset weirdness across the board
         // offsets the attack by a certain amount to align the animation with the player's hitbox
         int offsetPositionX, offsetPositionY;
         if(direction == -1){
@@ -427,13 +405,13 @@ void player::playAnimations(){
 /* written by David Rubal*/
 attack* player::getCurrentAttack(){
     switch(currentAttackType){
-        case ATK_BASIC: 
+        case BASIC: 
         return &punch;
         break;
-        case ATK_KICK: 
+        case KICK: 
         return &kickAttack;
         break;
-        case ATK_PROJECTILE_CAST:
+        case CAST:
         return &projectileCast;
         break;
         default:
@@ -470,7 +448,7 @@ void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
             // the other player takes the hit
             (*otherPlayer).getHit(activeAttack);
             // disable attack to prevent attack from hitting multiple times in the following active frames
-            (*activeAttack).updateActiveState(false);
+            (*activeAttack).consumeHitbox();
         }
 }
 
@@ -511,7 +489,7 @@ void player::dash(int direction){
 
 // get input for attacks and activate the respective attack 
 /*coded by Charlie Limbert*/
-void player::action(){
+void player::determineAction(){
 
     if(hitstunTimer.isActive())return;
 

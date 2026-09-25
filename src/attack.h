@@ -2,15 +2,16 @@
 /*class written by Charlie Limbert and David Rubal*/
 class attack {
     public:
-        attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY);
+        attack(action type, int hitHeight, int hitLength, int offsetX, int offsetY);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);
-        void updateActiveState(bool state);
+        void consumeHitbox();
+        // void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
 
 
-        attackType getAttackType();
+        action getAttackType();
         int getDirection();
    
         bool isActive();
@@ -21,7 +22,7 @@ class attack {
         
     private:
         // attack properties
-        attackType type; 
+        action type; 
         int direction;   // -1 = left, 1 = right
         int positionX;
         int positionY;
@@ -29,8 +30,6 @@ class attack {
         // TODO: integrate this into the posx and posy sent initially?
         int playerHitboxLength = 14; // used to offset attack position
 
-
-        
         // hitbox dimensions
         int hitboxHeight;
         int hitboxLength;
@@ -38,18 +37,19 @@ class attack {
         // whether attack is being used or not
         //TODO: REPLACE THIS WITH THE ACTIVE FRAMES VECTOR
         // Attack should know its current frame being played 
-        bool active = false;
+        // bool active = false;
 
         attackProperties properties;
         int currentFrame = 0;
         
         // hitbox for attack
         hitbox attackHitbox;
+        bool hitboxConsumed = false;
 };
 
 // Constructor
 /* written by Charlie Limbert and David Rubal*/
-attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY)
+attack::attack(action type, int hitHeight, int hitLength, int offsetX, int offsetY)
     : attackHitbox(hitHeight, hitLength){
     this->type = type;
     this->hitboxHeight = hitHeight;
@@ -60,13 +60,8 @@ attack::attack(attackType type, int hitHeight, int hitLength, int offsetX, int o
     this->properties = attackPropertiesLookup(type);    
 }
 
-
-// "getters" written by David Rubal
-
-
-
 // returns the attack's type (0 = punch, 1 = kick, 2 = cast)
-attackType attack::getAttackType(){
+action attack::getAttackType(){
     return type;
 }
 // gets the direction of the attack (used for kb calculation)
@@ -84,6 +79,7 @@ int attack::getCurrentFrame(){
 }
 
 void attack::incrementFrame(){
+    hitboxConsumed = false;
     currentFrame++;
 }
 void attack::resetFrameCounter(){
@@ -95,6 +91,9 @@ hitbox attack::getHitbox(){
     return attackHitbox;
 }
 
+void attack::consumeHitbox(){
+    hitboxConsumed = true;
+}
 
 
 // Update the position of the attack
@@ -114,20 +113,22 @@ void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitbox
 
 
 
-// changes the active state of the attack to the parameter's state
-void attack::updateActiveState(bool state){
-    active = state;
-}
+// // changes the active state of the attack to the parameter's state
+// void attack::updateActiveState(bool state){
+//     active = state;
+// }
 
 // returns whether this attack is active
 bool attack::isActive(){
-    return active;
+    return !hitboxConsumed && properties.activeFrames[currentFrame];
 }
 
 // Update the hitbox based on attack type and direction
 /*coded by Charlie Limbert*/
 void attack::updateAttackHitbox(bool attackHitboxActive){
 
+
+    //TODO: Why is this like it is?
         if(direction == -1){
             // attack extends to the left
             attackHitbox.updateHitbox(positionX, positionY);

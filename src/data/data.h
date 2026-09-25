@@ -7,6 +7,10 @@ class data{
         bool singlePlayerMode, gameStarted;
 };
 
+enum action{
+    IDLE, CROUCH, DASH, BASIC, KICK, CAST, PROJECTILE, DOUBLE_JUMP
+};
+
 data::data(){
     MenuArt.Open("./graphics/Backgrounds/MenuKeyArt.png");
     redWins = 0;

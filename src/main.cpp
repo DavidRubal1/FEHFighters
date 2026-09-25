@@ -13,7 +13,7 @@
 #include "animator.h" // uses timer.h
 #include "attack.h" // uses hitbox.h and animation.h
 #include "projectile.h"
-#include "hitboxManager.h"
+#include "moveset.h"
 #include "player.h" // uses hitbox.h, attack.h, and animation.h
 #include "screens.h"
 
@@ -170,7 +170,7 @@ int main()
         // move the player and handle solid collisions
         Player1.enactPlayerMovement();
         // get input for attacks
-        Player1.action();
+        Player1.determineAction();
         // check for attack collision with other player
         Player1.manageHitboxes(&Player2);
         // play current player animation
@@ -188,7 +188,7 @@ int main()
         }
         Player2.generalPlayerMovementControl();
         Player2.enactPlayerMovement();
-        Player2.action();
+        Player2.determineAction();
         Player2.manageHitboxes(&Player1);
         Player2.playAnimations();
         Player2.resetIfOffscreen();

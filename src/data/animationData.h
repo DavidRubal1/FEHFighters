@@ -8,9 +8,7 @@ struct animationProperties{
     int frameLength = 1; // how long to hold the current frame for
 };
 
- enum animationType{
-     ANI_IDLE, ANI_CROUCH, ANI_DASH, ANI_BASIC, ANI_KICK, ANI_CAST, ANI_PROJECTILE, ANI_DOUBLE_JUMP
- };
+
 
  int calcTotalFrames(std::vector<int> v){
     int totalFrames = 0;
@@ -20,35 +18,35 @@ struct animationProperties{
     return totalFrames;
  }
 
- animationProperties animationPropertiesLookup(animationType type){
+ animationProperties animationPropertiesLookup(action type){
     switch(type){
-        case ANI_IDLE:
+        case IDLE:
             return {"/Idle/Idle", 1, true, type, 30};
         break;
-        case ANI_CROUCH:
+        case CROUCH:
             return {"/Crouch/Crouch", 0, true, type};
         break;
-        case ANI_DASH:
+        case DASH:
             return {"/Dash/Dash", 8, true, type};
         break;
-        case ANI_BASIC:
+        case BASIC:
             //Frame length should be overriden
-            return {"/Punch/", calcTotalFrames(attackPropertiesLookup(ATK_BASIC).frameData), false, type};
+            return {"/Punch/", attackPropertiesLookup(BASIC).frameData.size(), false, type};
         break;
-        case ANI_KICK:
+        case KICK:
             //Frame length should be overriden
-            return {"/Kick/", calcTotalFrames(attackPropertiesLookup(ATK_KICK).frameData), false, type};
+            return {"/Kick/", attackPropertiesLookup(KICK).frameData.size(), false, type};
         break;
-        case ANI_CAST:
+        case CAST:
             //Frame length should be overriden
-            return {"/ProjectileCast/", calcTotalFrames(attackPropertiesLookup(ATK_PROJECTILE_CAST).frameData), false, type};
+            return {"/ProjectileCast/", attackPropertiesLookup(CAST).frameData.size(), false, type};
         break;
-        case ANI_PROJECTILE:
+        case PROJECTILE:
             return {"/Projectile/", 1, true, 5, 1};
         break;
 
 
-        case ANI_DOUBLE_JUMP:
+        case DOUBLE_JUMP:
             return {"/DoubleJump/doubleJumpFrame", 3, false, 3};
         break;
     }

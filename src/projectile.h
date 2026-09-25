@@ -1,6 +1,6 @@
 class projectile : public attack{
     public:
-        projectile(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color);
+        projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color);
         void playProjectileAnimation(int color);
         void playProjectileAnimation(int color);
         void moveProjectile(float velX);
@@ -15,7 +15,7 @@ class projectile : public attack{
 };
 
 // projectile constructor
-projectile::projectile(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color)
+projectile::projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color)
     : attack(type, hitHeight, hitLength, offsetX, offsetY),
         projectileAnimator(color){
     this->velocityX = velX;        

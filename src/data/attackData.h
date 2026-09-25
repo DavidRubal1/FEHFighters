@@ -15,14 +15,10 @@ struct attackProperties{
     std::vector<bool> activeFrames;
 };
 
-enum attackType{
-    ATK_BASIC, ATK_KICK, ATK_PROJECTILE_CAST, ATK_PROJECTILE
-};
 
-
-attackProperties attackPropertiesLookup(attackType type){
+attackProperties attackPropertiesLookup(action type){
     switch(type){
-        case ATK_BASIC: // punch
+        case BASIC: // punch
         return {
             5.0, // Damage
             5.0, // KB
@@ -34,7 +30,7 @@ attackProperties attackPropertiesLookup(attackType type){
             {false, false, false, true, false} // Active Frames
         };
         break;
-        case ATK_KICK: // kick
+        case KICK: // kick
         return{
             8.5,
             3, 
@@ -46,7 +42,7 @@ attackProperties attackPropertiesLookup(attackType type){
             {false, false, false, true, false}
         };
         break; // projectile cast
-        case ATK_PROJECTILE_CAST:
+        case CAST:
         return{
             3.0,
             4.0,
@@ -58,7 +54,7 @@ attackProperties attackPropertiesLookup(attackType type){
             {false, false, false, true, false}
         };
         break;
-        case ATK_PROJECTILE:
+        case PROJECTILE:
             return{
                 6.5,
                 3.0,
@@ -73,6 +69,6 @@ attackProperties attackPropertiesLookup(attackType type){
     }
 }
 
-// int* getHitboxDim(attackType type){
+// int* getHitboxDim(action type){
 
 // }
