@@ -2,7 +2,7 @@
 /*class written by Charlie Limbert and David Rubal*/
 class attack {
     public:
-        attack(attackType type ,int hitHeight, int hitLength, int offsetX, int offsetY);
+        attack(attackType type, int hitHeight, int hitLength, int offsetX, int offsetY);
         hitbox getHitbox();
         void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
         void updateAttackHitbox(bool attackHitboxActive);

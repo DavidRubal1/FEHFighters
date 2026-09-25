@@ -373,7 +373,7 @@ void player::playAnimations(){
 
 
         // Determine current frame based on timer
-        int elapsedTime = 0;
+        int elapsedTime = 
         attackHitboxActive = false;
 
         for(int i = 0; i < 5; i++)
@@ -427,14 +427,17 @@ void player::playAnimations(){
 /* written by David Rubal*/
 attack* player::getCurrentAttack(){
     switch(currentAttackType){
-        case 0: 
+        case ATK_BASIC: 
         return &punch;
         break;
-        case 1: 
+        case ATK_KICK: 
         return &kickAttack;
         break;
-        case 2:
+        case ATK_PROJECTILE_CAST:
         return &projectileCast;
+        break;
+        default:
+        return NULL;
         break;
     }
 }

@@ -13,6 +13,7 @@
 #include "animator.h" // uses timer.h
 #include "attack.h" // uses hitbox.h and animation.h
 #include "projectile.h"
+#include "hitboxManager.h"
 #include "player.h" // uses hitbox.h, attack.h, and animation.h
 #include "screens.h"
 

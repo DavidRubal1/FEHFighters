@@ -1,0 +1,6 @@
+class moveset{
+    public:
+
+    private:
+        
+};
