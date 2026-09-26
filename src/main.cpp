@@ -25,7 +25,7 @@
 
 int main()
 {
-    int frameTimeMilliseconds = 20; // time between frames in milliseconds
+    int frameTimeMilliseconds = 16; // time between frames in milliseconds
     // variables to keep track of wins and games
     data gameData;
     //Menu Objects

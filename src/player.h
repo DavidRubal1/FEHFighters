@@ -126,11 +126,11 @@ class player{
         // flag to tell if the player is in "fast fall", which increases their gravity
         bool inFastFall = false;
         // normal gravity
-        float gravity = 0.08, tempGravity = 0.08;
+        float gravity = 0.24, tempGravity = 0.24;
         // downwards force applied each frame
         float currentGravityForce = 0, groundedGravityForce = 0.3;
         // terminal velocity
-        float maxGravityForce = 1.2;
+        float maxGravityForce = 1.5;
 
         // controls
         //movement keys followed by attack keys
@@ -300,12 +300,10 @@ timer player::getIntangibilityTimer(){
 void player::playAnimations(){
     // written by David rubal
 
-
     //--------TODO: Rework this section with less nesting and only one call to the animator-------//
     // Possibly tie this to the movement code as well...
 
     currentAnimationType = IDLE;
-    
     
     // if not in hitstun
     if(!hitstunTimer.isActive() && currentAttack == nullptr && grounded){
@@ -339,35 +337,30 @@ void player::playAnimations(){
     /* Updated by David Rubal */
     if(currentAttack != nullptr && !hitstunTimer.isActive()){
         
-
         currentAnimationType = currentAttack->getAttackType();
-
         currentAnimationProperties = animationPropertiesLookup(currentAnimationType);
         
 
         // Find frame timing
-
         // We only have information about the previous frame of animation
-
         // If the attack was playing on the last frame
         if(playerAnimator.getLastFrameType() == currentAnimationType){
             // If the current frame is the last frame of animation, reset currentAttack
-            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1){
+            int holdTime = playerAnimator.getHoldTime();
+            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1 && holdTime == currentAttack->getProperties().frameData[currentAnimationProperties.finalFrameNum - 1] - 1){
                     // TODO: fix the way this is structured since it is a little akward.
+                    // TODO: fix this since it skips the last frame of animation
                     currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
                     // END the attack 
                     // Reset in case same animation is played again directly after this, and to reset for next time
                     currentAttack->resetFrameCounters();
                     playerAnimator.resetTimer();
                     currentAttack = nullptr;
-            } else if(playerAnimator.getHoldTime() == 0){
+            } else if(holdTime == 0){
                 // Go to next frame of animation
                 currentAttack->incrementFrame();
             }
         }
-
-        // TODO: fix the above block of code -> animation lasts 1 too many frames, since the code that resets currentAttack also has another frame play after it
-                   
 
         if(currentAttack != nullptr) currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
 
@@ -584,6 +577,7 @@ void player::generalPlayerMovementControl(){
                 doubleJumpY = positionY + hitboxHeight - 1;
                 // give a burst of speed in held direction
                 if(!Keyboard.isPressed({left, right})){
+                    //TODO: Rework double jump momentum
                     if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                         direction = -1;
                         velocityX = 2.0 * direction;

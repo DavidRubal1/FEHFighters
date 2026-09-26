@@ -26,7 +26,7 @@ attackProperties attackPropertiesLookup(action type){
             1.0, // KB Scaling
             6,   // Hitstun Base
             0.22,// Hitstun Scaling
-            {1, 1, 1, 2, 8}, // Frame data
+            {1, 1, 2, 2, 8}, // Frame data
             {false, false, false, true, false} // Active Frames
         };
         break;
@@ -38,7 +38,7 @@ attackProperties attackPropertiesLookup(action type){
             2.5,
             5,
             0.2,
-            {2, 2, 3, 3, 9},
+            {2, 3, 2, 3, 7},
             {false, false, false, true, false}
         };
         break; // projectile cast
