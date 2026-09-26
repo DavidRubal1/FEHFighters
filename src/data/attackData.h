@@ -26,7 +26,7 @@ attackProperties attackPropertiesLookup(action type){
             1.0, // KB Scaling
             6,   // Hitstun Base
             0.22,// Hitstun Scaling
-            {1, 1, 2, 2, 8}, // Frame data
+            {1, 1, 1, 2, 8}, // Frame data
             {false, false, false, true, false} // Active Frames
         };
         break;

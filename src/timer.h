@@ -5,7 +5,7 @@ class timer{
         void setActiveState(bool state);
         void incrementTimer();
         void updateTimerState();
-        int getCurrentTimerTime();
+        int getCurrentTime();
         bool isActive();
         void changeTimerMax(int max);
         void resetTimer();
@@ -39,7 +39,7 @@ void timer::updateTimerState(){
 }
 
 // returns the timer's current time
-int timer::getCurrentTimerTime(){
+int timer::getCurrentTime(){
     return current;
 }
 

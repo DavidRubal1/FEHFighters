@@ -67,7 +67,7 @@ class player{
         attack punch;
         attack kickAttack;
         attack projectileCast;
-        attack *currentAttack = NULL;
+        attack *currentAttack = nullptr;
         // TODO: move these attacks to Moveset class, throw projectile spawner in there as well 
         // What do I do with you...
         //attack projectileProjectile;
@@ -143,7 +143,6 @@ class player{
         // makes the player invincible for a short period after dying
         timer respawnIntangibleTimer;
         
-        // attack animation variables
         action currentAnimationType;
 
         bool AttackPressedLastFrame = false;  //track previous frame's button state
@@ -158,6 +157,8 @@ class player{
 
         //TODO: remove this when manage hitboxes gets redone
         bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
+
+    
 };
 
 // constructor for player. Assigns each movement and attack key, starting position, player color,
@@ -307,7 +308,7 @@ void player::playAnimations(){
     
     
     // if not in hitstun
-    if(!hitstunTimer.isActive() && currentAttack == NULL && grounded){
+    if(!hitstunTimer.isActive() && currentAttack == nullptr && grounded){
         // if not attacking
         // if not in attack lag or on ground
         // if holding left or right and not crouch but not both left and right
@@ -335,32 +336,47 @@ void player::playAnimations(){
     
     //attack animation 
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
-    if(currentAttack != NULL && !hitstunTimer.isActive()){
+    /* Updated by David Rubal */
+    if(currentAttack != nullptr && !hitstunTimer.isActive()){
         
-        action lastFrame = playerAnimator.getLastFrameType();
+
+        currentAnimationType = currentAttack->getAttackType();
+
+        currentAnimationProperties = animationPropertiesLookup(currentAnimationType);
+        
+
+        // Find frame timing
+
+        // We only have information about the previous frame of animation
+
         // If the attack was playing on the last frame
-        if(lastFrame == currentAttack->getAttackType()){
-            //TODO: Add a check to make sure another attack is performed directly after another ends
-
-            // I want to increment current frame when the animator's animation frame increments as well
-            // Then I set the new frameData for that frame 
-            // Make sure to reset currentAttack to NULL and the interal attack's current frame to 0 as well when the attack ends
-
-            // I could also try to track frames inside of attack.h itself
-
-        } else {
-
+        if(playerAnimator.getLastFrameType() == currentAnimationType){
+            // If the current frame is the last frame of animation, reset currentAttack
+            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1){
+                    // TODO: fix the way this is structured since it is a little akward.
+                    currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
+                    // END the attack 
+                    // Reset in case same animation is played again directly after this, and to reset for next time
+                    currentAttack->resetFrameCounters();
+                    playerAnimator.resetTimer();
+                    currentAttack = nullptr;
+            } else if(playerAnimator.getHoldTime() == 0){
+                // Go to next frame of animation
+                currentAttack->incrementFrame();
+            }
         }
-        currentAnimationProperties = animationPropertiesLookup(currentAttack->getAttackType());
-        currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
 
-        //TODO: issues now are currentFrame of attacks are not being updated and it is hard to tell when an attack is over outside of the animator class
+        // TODO: fix the above block of code -> animation lasts 1 too many frames, since the code that resets currentAttack also has another frame play after it
+                   
+
+        if(currentAttack != nullptr) currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
 
         //TODO fix offset weirdness across the board
         // offsets the attack by a certain amount to align the animation with the player's hitbox
-        int offsetPositionX;
         if(direction == -1){
-            offsetPositionX -= 11;
+            offsetX -= 10;
+        } else{
+            offsetX -= 1;
         }
 
         // Cast projectile -> TODO: come back to this once attacks moved to Moveset Class
@@ -372,14 +388,14 @@ void player::playAnimations(){
         // }
     }
 
-    playerAnimator.playAnimation(currentAnimationProperties, positionX, positionY, direction);
+    playerAnimator.playAnimation(currentAnimationProperties, offsetX, positionY, direction);
 }
 
 
 //updates position of attack hitboxes and checks for overlap with other player
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
-    if(currentAttack != NULL){
+    if(currentAttack != nullptr){
         // gets the current attack to update position and check for overlap with other player
         // attack* currentAttack = getCurrentAttack();
 
@@ -451,7 +467,7 @@ void player::determineAction(){
     //TODO: lift this out of here into another function to cover more at once
     if(hitstunTimer.isActive())return;
 
-    if(currentAttack == NULL) {
+    if(currentAttack == nullptr) {
         if (Keyboard.isPressed(basic) || AIAttack == 0) {
             currentAttack = &punch;
         }
@@ -467,7 +483,7 @@ void player::determineAction(){
 
 // Returns the current attack action type if the player is attacking. If not, returns the IDLE action
 action player::getCurrentAttack(){
-    if(currentAttack == NULL){
+    if(currentAttack == nullptr){
         return IDLE;
     } else {
         return currentAttack->getAttackType();
@@ -495,7 +511,7 @@ void player::generalPlayerMovementControl(){
     // grounded movement
     if(grounded){
         // not in attack or endlag
-        if(currentAttack == NULL){
+        if(currentAttack == nullptr){
             // if not crouching or holding both left and right
             if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
                 || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
@@ -554,7 +570,7 @@ void player::generalPlayerMovementControl(){
             inFastFall = true;
         }
         // if not in lag or in an attack
-        if(currentAttack == NULL){
+        if(currentAttack == nullptr){
             // use double jump when jumping in air
             if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
                 inFastFall = false;
@@ -616,7 +632,7 @@ void player::enactPlayerMovement(){
     // if the player is not in hitstun
     if(!hitstunTimer.isActive()){
         // decay X-velocity exponentially when not moving horizontally
-        if(grounded && (Keyboard.isPressed(down) || AIVerticalDirection == 0) || ( !isAI && !Keyboard.areAnyPressed({left,right}) || AIHorizontalDirection == -1)  || currentAttack != NULL){
+        if(grounded && (Keyboard.isPressed(down) || AIVerticalDirection == 0) || ( !isAI && !Keyboard.areAnyPressed({left,right}) || AIHorizontalDirection == -1)  || currentAttack != nullptr){
             velocityX *= pow(velocityXDecay, abs(velocityX));
         }else{
             // the player is moving, do not decay speed until movement has stopped
@@ -690,7 +706,7 @@ void player::determineAIDecisions(player *humanPlayer){
     // update the reaction timer
     AIReactionTimer.updateTimerState();
     // once every 12 frames, set the targeted position to the player's position
-    if(AIReactionTimer.getCurrentTimerTime() == 0){
+    if(AIReactionTimer.getCurrentTime() == 0){
         targetX = playerX;
         targetY = playerY;
     }

@@ -3,7 +3,8 @@
 class animator{
     public:
         animator(int color);
-        timer getTimer();
+        int getHoldTime();
+        int getAnimationTime();
         action getLastFrameType();
         int playAnimation(animationProperties properties, int posX, int posY, int direction);
         // directionless
@@ -15,19 +16,27 @@ class animator{
         int color;
         animationProperties currentAnimation;
         timer animationTimer;
-        timer holdTime;
+        timer holdTimer;
         FEHImage drawAnimation;
 };
 
 // Constructor, sets the color of the object to be animated
 animator::animator(int color)
-: animationTimer(), holdTime(){
+: animationTimer(), holdTimer(){
     this->color = color;
 }
 
 // returns a copy of the animationTimer
-timer animator::getTimer(){
-    return animationTimer;
+// timer animator::getAnimationTimer(){
+//     return animationTimer;
+// }
+
+int animator::getHoldTime(){
+    return holdTimer.getCurrentTime();
+}
+
+int animator::getAnimationTime(){
+    return animationTimer.getCurrentTime();
 }
 
 action animator::getLastFrameType(){
@@ -37,6 +46,7 @@ action animator::getLastFrameType(){
 // resets the animation timer
 void animator::resetTimer(){
     animationTimer.resetTimer();
+    holdTimer.resetTimer();
 }
 
 // plays a frame of animation given info about the animation
@@ -51,7 +61,7 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
     if(type != properties.type){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(properties.finalFrameNum);
-        holdTime.resetTimer();
+        holdTimer.resetTimer();
         type = properties.type;
     }
     // update whether the time is active or not (has reached max val or not)
@@ -77,22 +87,22 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
         // add the given file name to the file path
         strcat(filePath, properties.fileName);
         // add the number indicator given for the frame of animation 
-        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
+        strcat(filePath, std::to_string(animationTimer.getCurrentTime()).c_str());
         // add the .png file type
         strcat(filePath, ".png"); 
         //draw the given animation at the provided location
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
         // determine if the current frame # should be held for the next frame
-        if(holdTime.getCurrentTimerTime() < properties.frameLength - 1){
-            holdTime.incrementTimer();
+        if(holdTimer.getCurrentTime() < properties.frameLength - 1){
+            holdTimer.incrementTimer();
         }else{
             animationTimer.incrementTimer();
-            holdTime.resetTimer();
+            holdTimer.resetTimer();
         }
         
     }
-    return animationTimer.getCurrentTimerTime();
+    return animationTimer.getCurrentTime();
 
 }
 
@@ -107,7 +117,7 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
     if(type != properties.type){
         animationTimer.resetTimer();
         animationTimer.changeTimerMax(properties.finalFrameNum);
-        holdTime.resetTimer();
+        holdTimer.resetTimer();
         type = properties.type;
     }
     animationTimer.updateTimerState();
@@ -118,18 +128,18 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
     }
     if(animationTimer.isActive()){
         strcat(filePath, properties.fileName);
-        strcat(filePath, std::to_string(animationTimer.getCurrentTimerTime()).c_str());
+        strcat(filePath, std::to_string(animationTimer.getCurrentTime()).c_str());
         strcat(filePath, ".png");
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        if(holdTime.getCurrentTimerTime() < properties.frameLength - 1){
-            holdTime.incrementTimer();
+        if(holdTimer.getCurrentTime() < properties.frameLength - 1){
+            holdTimer.incrementTimer();
         }else{
             animationTimer.incrementTimer();
-            holdTime.resetTimer();
+            holdTimer.resetTimer();
         }
     }
-     return animationTimer.getCurrentTimerTime();
+     return animationTimer.getCurrentTime();
 }
 
 

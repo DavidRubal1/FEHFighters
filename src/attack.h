@@ -18,7 +18,7 @@ class attack {
         attackProperties getProperties();
         int getCurrentFrame();
         void incrementFrame();
-        void resetFrameCounter();
+        void resetFrameCounters();
         
     private:
         // attack properties
@@ -39,7 +39,8 @@ class attack {
         // bool active = false;
 
         attackProperties properties;
-        int currentFrame = 0;
+
+        int currentAnimationFrame = 0;
         
         // hitbox for attack
         hitbox attackHitbox;
@@ -74,15 +75,16 @@ attackProperties attack::getProperties(){
 }
 
 int attack::getCurrentFrame(){
-    return currentFrame;
+    return currentAnimationFrame;
 }
 
 void attack::incrementFrame(){
     hitboxConsumed = false;
-    currentFrame++;
+    currentAnimationFrame++;
 }
-void attack::resetFrameCounter(){
-    currentFrame = 0;
+
+void attack::resetFrameCounters(){
+    currentAnimationFrame = 0;
 }
 
 // returns a copy of the attack's hitbox
@@ -119,7 +121,7 @@ void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitbox
 
 // returns whether this attack is active
 bool attack::isActive(){
-    return !hitboxConsumed && properties.activeFrames[currentFrame];
+    return !hitboxConsumed && properties.activeFrames[currentAnimationFrame];
 }
 
 // Update the hitbox based on attack type and direction
