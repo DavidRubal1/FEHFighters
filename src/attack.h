@@ -17,8 +17,7 @@ class attack {
         bool isActive();
         attackProperties getProperties();
         int getCurrentFrame();
-        void incrementFrame();
-        void resetFrameCounters();
+        void setCurrentFrame(int i);
         
     private:
         // attack properties
@@ -78,14 +77,11 @@ int attack::getCurrentFrame(){
     return currentAnimationFrame;
 }
 
-void attack::incrementFrame(){
-    hitboxConsumed = false;
-    currentAnimationFrame++;
+void attack::setCurrentFrame(int i){
+    hitboxConsumed = currentAnimationFrame != 1;
+    currentAnimationFrame = i;
 }
 
-void attack::resetFrameCounters(){
-    currentAnimationFrame = 0;
-}
 
 // returns a copy of the attack's hitbox
 hitbox attack::getHitbox(){

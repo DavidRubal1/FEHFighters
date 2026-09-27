@@ -98,7 +98,7 @@ class player{
         bool doubleJumpUsed = false;
 
         timer dashLag;
-        timer jumpLag; // flag to keep track of whether the player has just jumped, used to prevent double jump from being instantly used
+        bool jumpLag = false;
         timer hitstunTimer; // hitstun prevents the player from acting after getting hit
         timer respawnIntangibleTimer; // makes the player invincible for a short period after dying
          
@@ -155,7 +155,7 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
         projectileCast(CAST, 10, 5, 3, 6), 
         //projectileProjectile(PROJECTILE, 9, 8, -5, 8, 2.5),
         playerAnimator(color), doubleJumpAnimator(color),
-        dashLag(4), jumpLag(3), respawnIntangibleTimer(30){
+        dashLag(3), respawnIntangibleTimer(30){
     this->left = left;
     this->right = right;
     this->up = up;
@@ -170,7 +170,7 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
     playerColor = color;
     isAI = AI;
     if(AI){
-        AIReactionTimer.changeTimerMax(11);
+        AIReactionTimer.setMax(11);
     }
     if(color == BLUE){
         direction = -1; // Blue starts facing left
@@ -208,9 +208,9 @@ void player::getHit(attack* activeAttack){
     // scale force based on current damage and given knockback
     float force = (((0.1 * (damage / 100)))* 50 * properties.KBscaling) + properties.knockback;
     // reset timing varibles before entering hitstun, or move those timers into a separate function
-    hitstunTimer.resetTimer();
+    hitstunTimer.reset();
     // set hitstun time based on scaling
-    hitstunTimer.changeTimerMax(properties.hitstunFramesBase  + properties.hitstunScaling  * damage);
+    hitstunTimer.setMax(properties.hitstunFramesBase  + properties.hitstunScaling  * damage);
     // calculate the direction of knockback into x and y components
     // angle degrees ranges from -pi to pi, with -pi as directly down and pi is straight up
     forceX = (*activeAttack).getDirection() * force*cos(properties.angle);
@@ -237,23 +237,37 @@ void player::getHit(attack* activeAttack){
 // increments timers and updates the player state accordingly
 /*written by Charlie Limbert and David Rubal*/
 void player::updateTimers(){
-    // dash lag timer, keeps track of when the player started a dash
-    if(dashLag.isActive() && !dashLag.incrementTimer()){
-        dashLag.resetTimer(false);
+    // dash lag timer, keeps track of when the player is in a dash
+    if(dashLag.isActive()){
+        if(basic == KEY_X) std::cout << "DASH LAG ACTIVE\n" << dashLag.getCurrentTime() << std::endl;
+        dashLag.increment();
+    } else{
+        dashLag.reset();
+        dashLag.stop();
     }
 
-    // jump lag timer, prevents double jump from instantly being used
-    if(jumpLag.isActive() && !jumpLag.incrementTimer()  && !Keyboard.isPressed(up)){
-        jumpLag.resetTimer(false);
-    }
-    
+    //TODO: move this out of timers into another method
+    // jump lag timer, prevents double jumping with same input as jump
+    jumpLag = jumpLag && Keyboard.isPressed(up);
+
     // hitstun timer, prevents the player from acting after being attacked
-    if(hitstunTimer.isActive() && !hitstunTimer.incrementTimer() && velocityY > 2.0){
-        hitstunTimer.resetTimer(false);
+    if(hitstunTimer.isActive()){
+        hitstunTimer.increment();
+        if(velocityY > 2.0) {
+            hitstunTimer.reset();
+            hitstunTimer.stop();
+        }
+    } else{
+        hitstunTimer.reset();
+        hitstunTimer.stop();
     }
+
     // respawn intangibility timer, provided invincibility after respawn
-    if(respawnIntangibleTimer.isActive() && !respawnIntangibleTimer.incrementTimer()){
-        respawnIntangibleTimer.resetTimer(false);
+    if(respawnIntangibleTimer.isActive()){
+        respawnIntangibleTimer.increment();
+    } else{
+        respawnIntangibleTimer.reset();
+        respawnIntangibleTimer.stop();
     }
 }
 
@@ -292,8 +306,8 @@ void player::playAnimations(){
     if(doubleJumpUsed){
         doubleJumpAnimator.playAnimation(animationPropertiesLookup(DOUBLE_JUMP), doubleJumpX, doubleJumpY);
     }else{
-        // resets the animator when player is grounded
-        doubleJumpAnimator.resetTimer();
+        // resets the animator when player gets double jump back
+        doubleJumpAnimator.resetTimers();
     }
     
     int offsetX = positionX;
@@ -302,40 +316,22 @@ void player::playAnimations(){
     /*coded by Charlie Limbert, based on existing animation code for idling by David Rubal*/
     /* Updated by David Rubal */
     if(currentAttack != nullptr && !hitstunTimer.isActive()){
-        
-        currentAnimationType = currentAttack->getAttackType();
-        currentAnimationProperties = animationPropertiesLookup(currentAnimationType);
-        
-        // If the attack was playing on the last frame
-        if(playerAnimator.getLastFrameType() == currentAnimationType){
-            // If the current frame is the last frame of animation, reset currentAttack
-            int holdTime = playerAnimator.getHoldTime();
 
-            // TODO: make this not a headache to look at
-            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1 
-            && holdTime == currentAttack->getProperties().frameData[currentAnimationProperties.finalFrameNum - 1] - 1){
-                    
-                    currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
-                    // END the attack 
-                    // Reset in case same animation is played again directly after this, and to reset for next time
-                    currentAttack->resetFrameCounters();
-                    playerAnimator.resetTimer();
-                    currentAttack = nullptr;
-            } else if(holdTime == 0){
-                // Go to next frame of animation
-                currentAttack->incrementFrame();
-            }
-        }
-
-        //TODO: also this
-        if(currentAttack != nullptr) currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
-
-        //TODO fix offset weirdness across the board
-        // offsets the attack by a certain amount to align the animation with the player's hitbox
-        if(direction == -1){
+        if(!playerAnimator.isAnimationOver() || currentAttack->getAttackType() != playerAnimator.getAnimationType()){
+            currentAnimationType = currentAttack->getAttackType();
+            currentAnimationProperties = animationPropertiesLookup(currentAnimationType);   
+            currentAttack->setCurrentFrame(playerAnimator.getAnimationTime());
+            //TODO fix offset weirdness across the board
+            // offsets the attack by a certain amount to align the animation with the player's hitbox
+            if(direction == -1){
             offsetX -= 10;
+            } else{
+                offsetX -= 1;
+            }
         } else{
-            offsetX -= 1;
+            // End attack, go with previously declared animation
+            currentAttack->setCurrentFrame(0);
+            currentAttack = nullptr;
         }
 
         // Cast projectile -> TODO: come back to this once attacks moved to Moveset Class
@@ -346,6 +342,9 @@ void player::playAnimations(){
         //     }
         // }
     }
+    // if(basic == KEY_X){
+    //     std::cout << "\nTYPE: \n" << currentAnimationProperties.fileName << "ANIMATION \n" << playerAnimator.getAnimationTime() << "\nHOLD \n" << playerAnimator.getHoldTime() << std::endl;
+    // }
 
     playerAnimator.playAnimation(currentAnimationProperties, offsetX, positionY, direction);
 }
@@ -392,7 +391,7 @@ void player::resetIfOffscreen(){
         velocityY = 0;
         damage = 0;
         remainingLives--; 
-        jumpLag.setActiveState(true); // jump lag to prevent instant double jump after respawning
+        jumpLag = true; // jump lag to prevent instant double jump after respawning
 
         // checks for game over when a player has run out of lives
         if (remainingLives == 0)
@@ -409,7 +408,7 @@ void player::resetIfOffscreen(){
 void player::dash(int direction){
     // increase x-velocity
     velocityX = direction * runSpeedMax * 0.9;
-    dashLag.setActiveState(true);
+    dashLag.activate();
     // decrease velocity decay for sliding
     velocityXDecay = velocityXDecayDash;
 }
@@ -452,7 +451,7 @@ void player::jump(){
     currentGravityForce = 0;
     // decrease y-velocity (upwards motion)
     velocityY -= jumpForce;
-    jumpLag.setActiveState(true);
+    jumpLag= true;
 }
 
 // general input handler for player movement
@@ -518,7 +517,7 @@ void player::generalPlayerMovementControl(){
             }
         }
         // fast fall when down is pressed
-        if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !jumpLag.isActive()){
+        if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !jumpLag){
             // increase gravity for fast fall
             gravity = fastFallGravity;
             inFastFall = true;
@@ -526,7 +525,7 @@ void player::generalPlayerMovementControl(){
         // if not in lag or in an attack
         if(currentAttack == nullptr){
             // use double jump when jumping in air
-            if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !jumpLag.isActive()){
+            if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !jumpLag){
                 inFastFall = false;
                 //increase gravity
                 gravity = tempGravity;
@@ -703,7 +702,7 @@ void player::determineAIDecisions(player *humanPlayer){
     // otherwise, if the player is below the AI, crouch/fastfall to meet them
     if(positionY < targetY - safeRangeY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 0;
-    }else if(!jumpLag.isActive() && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
+    }else if(!jumpLag && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 1;
     }
     // if the AI is within range of the player, attack
@@ -735,9 +734,9 @@ void player::determineAIDecisions(player *humanPlayer){
         AIAttack = -1;
     }
     //increment the reaction time
-    AIReactionTimer.incrementTimer();
+    AIReactionTimer.increment();
     if(!AIReactionTimer.isActive()){
-        AIReactionTimer.resetTimer();
+        AIReactionTimer.reset();
     }
     
 }

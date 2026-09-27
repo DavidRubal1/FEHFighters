@@ -5,16 +5,17 @@ class animator{
         animator(int color);
         int getHoldTime();
         int getAnimationTime();
-        action getLastFrameType();
+        bool isAnimationOver();
+        action getAnimationType();
         int playAnimation(animationProperties properties, int posX, int posY, int direction);
         // directionless
         int playAnimation(animationProperties properties, int posX, int posY);
-        void resetTimer();
-
+        void resetTimers();
     private:
         int type = -1;
         int color;
         animationProperties currentAnimation;
+        char baseFilePath[64] = "./graphics/Animations";
         timer animationTimer;
         timer holdTimer;
         FEHImage drawAnimation;
@@ -26,11 +27,6 @@ animator::animator(int color)
     this->color = color;
 }
 
-// returns a copy of the animationTimer
-// timer animator::getAnimationTimer(){
-//     return animationTimer;
-// }
-
 int animator::getHoldTime(){
     return holdTimer.getCurrentTime();
 }
@@ -39,34 +35,46 @@ int animator::getAnimationTime(){
     return animationTimer.getCurrentTime();
 }
 
-action animator::getLastFrameType(){
+bool animator::isAnimationOver(){
+    return !animationTimer.isActive();
+}
+
+action animator::getAnimationType(){
     return currentAnimation.type;
 }
 
 // resets the animation timer
-void animator::resetTimer(){
-    animationTimer.resetTimer();
-    holdTimer.resetTimer();
+void animator::resetTimers(){
+    animationTimer.reset();
+    holdTimer.reset();
+    animationTimer.activate();
+    holdTimer.activate();
 }
+
 
 // plays a frame of animation given info about the animation
 // animation path must follow ./graphics/Animations/Player(Color)/(Direction)/
 // returns current animation frame
 int animator::playAnimation(animationProperties properties, int posX, int posY, int direction){
-    currentAnimation = properties;
+    
 
-    // gradually builds the file path
-    char filePath[64] = "./graphics/Animations";
+    char filePath[64];
+    strcpy(filePath, baseFilePath);
+
     // if the animation ID has changed, the reset the animation Timer
+    //TODO: I could probably replace this with a state of one or both timers instead of comparing type
     if(type != properties.type){
-        animationTimer.resetTimer();
-        animationTimer.changeTimerMax(properties.finalFrameNum);
-        holdTimer.resetTimer();
+        currentAnimation = properties;
+        animationTimer.setMax(properties.frameLengths.size());
+        holdTimer.setMax(properties.frameLengths.at(0));
+        resetTimers();
         type = properties.type;
     }
+
     // reset the timer if it is looping and has become inactive
     if(properties.looping && !animationTimer.isActive()){
-        animationTimer.resetTimer();
+        animationTimer.reset();
+        animationTimer.activate();
     }
 
     if(animationTimer.isActive()){
@@ -92,14 +100,18 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
         // determine if the current frame # should be held for the next frame
-        if(holdTimer.getCurrentTime() < properties.frameLength - 1){
-            holdTimer.incrementTimer();
-        }else{
-            animationTimer.incrementTimer();
-            holdTimer.resetTimer();
+        holdTimer.increment();
+        if(!holdTimer.isActive()){
+            animationTimer.increment();
+            holdTimer.reset();
+            if(animationTimer.isActive()){
+                holdTimer.setMax(properties.frameLengths.at(animationTimer.getCurrentTime()));
+                holdTimer.activate();
+            }
         }
-        
     }
+
+
     return animationTimer.getCurrentTime();
 
 }
@@ -107,21 +119,20 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
 // plays a frame of animation given info about the animation
 // made for non-player-bound directionless animations (double jump)
 int animator::playAnimation(animationProperties properties, int posX, int posY){
-    currentAnimation = properties;
-
+    
+    char filePath[64];
+    strcpy(filePath, baseFilePath);
     //same functionality as the function above, but without the player color and direction directories
-    char filePath[64] = "./graphics/Animations";
-    // if the animation has changed
     if(type != properties.type){
-        animationTimer.resetTimer();
-        animationTimer.changeTimerMax(properties.finalFrameNum);
-        holdTimer.resetTimer();
+        currentAnimation = properties;
+        animationTimer.setMax(properties.frameLengths.size());
+        holdTimer.setMax(properties.frameLengths.at(0));
+        resetTimers();
         type = properties.type;
     }
     if(properties.looping && !animationTimer.isActive()){
-        if(!animationTimer.isActive()){
-            animationTimer.resetTimer();
-        }
+        animationTimer.reset();
+        animationTimer.activate();
     }
     if(animationTimer.isActive()){
         strcat(filePath, properties.fileName);
@@ -129,11 +140,14 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
         strcat(filePath, ".png");
         drawAnimation.Open(filePath);
         drawAnimation.Draw(posX, posY);
-        if(holdTimer.getCurrentTime() < properties.frameLength - 1){
-            holdTimer.incrementTimer();
-        }else{
-            animationTimer.incrementTimer();
-            holdTimer.resetTimer();
+        holdTimer.increment();
+        if(!holdTimer.isActive()){
+            animationTimer.increment();
+            holdTimer.reset();
+            if(animationTimer.isActive()){
+                holdTimer.setMax(properties.frameLengths.at(animationTimer.getCurrentTime()));
+                holdTimer.activate();
+            }
         }
     }
      return animationTimer.getCurrentTime();

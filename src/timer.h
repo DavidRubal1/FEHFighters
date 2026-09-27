@@ -1,19 +1,20 @@
 // class and all methods written by David Rubal
+// Timer is active when current < max [0 < current <= max]. Timer becomes inactive once current == max.
 class timer{
     public:
         timer();
         timer(int max);
-        void setActiveState(bool state);
-        bool incrementTimer();
+        void activate();
+        void stop();
+        void increment();
         int getCurrentTime();
         bool isActive();
-        void changeTimerMax(int max);
-        void resetTimer(bool active = true);
+        void setMax(int max);
+        void reset();
     private:
         int max;
         int current = 0;
         bool active = false;
-        int hold = 0;
 };
 // no args constructor
 timer::timer(){
@@ -24,13 +25,17 @@ timer::timer(int max){
 }
 
 // sets the timer state to the boolean parameter
-void timer::setActiveState(bool state){
-    active = state;
+void timer::activate(){
+    active = true;
 }
 
-// increments the timer time by one
-bool timer::incrementTimer(){
-    return active = ++current <= max;
+void timer::stop(){
+    active = false;
+}
+
+// Increments timer and updates state accordingly
+void timer::increment(){
+    active = ++current < max;
 }
 
 // returns the timer's current time
@@ -44,12 +49,11 @@ bool timer::isActive(){
 }
 
 // updates the timer's maximum time
-void timer::changeTimerMax(int max){
+void timer::setMax(int max){
     this->max = max;
 }
 
-// resets the current time to 0 and reactivates the timer
-void timer::resetTimer(bool active = true){
+// resets the current time to 0
+void timer::reset(){
     current = 0;
-    this->active = active;
 }

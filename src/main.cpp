@@ -68,8 +68,8 @@ int main()
     float p1Damage = 0.0, p2Damage = 0.0;
     LCD.SetFontScale(0.5);
     timer goTimer;
-    goTimer.changeTimerMax(30); // timer set to display "Go!" for 30 frames after the game has started
-    goTimer.resetTimer();
+    goTimer.setMax(30); // timer set to display "Go!" for 30 frames after the game has started
+    goTimer.activate();
 
     // game start countdown 
     LCD.SetFontScale(2);
@@ -115,8 +115,7 @@ int main()
         if(goTimer.isActive()){
             LCD.SetFontScale(2);
             LCD.WriteAt("Go!", 130, 90);
-            goTimer.incrementTimer();
-            goTimer.updateTimerState();
+            goTimer.increment();
             LCD.SetFontScale(0.5);
         }
         // get player1 damage to display

@@ -1,11 +1,10 @@
 // struct to create types of animations for simple compatibility with the playAnimation methods above
 struct animationProperties{
     char fileName[32];
-    int finalFrameNum; //the # of the last frame of the animation
     bool looping; // does the animation loop
     action type; // unique identifier to differentiate animations
     // TODO: should this be moved out of the properties?
-    int frameLength = 1; // how long to hold the current frame for
+    std::vector<int> frameLengths = {1}; // how long to hold the current frame for
 };
 
 
@@ -18,36 +17,41 @@ struct animationProperties{
     return totalFrames;
  }
 
+ std::vector<int> createVectorWithSameElements(int size, int num){
+    std::vector<int> v(size, num);
+    return v;   
+ }
+
  animationProperties animationPropertiesLookup(action type){
     switch(type){
         case IDLE:
-            return {"/Idle/Idle", 1, true, type, 30};
+            return {"/Idle/Idle", true, type, createVectorWithSameElements(2, 30)};
         break;
         case CROUCH:
-            return {"/Crouch/Crouch", 0, true, type};
+            return {"/Crouch/Crouch", true, type};
         break;
         case DASH:
-            return {"/Dash/Dash", 8, true, type};
+            return {"/Dash/Dash", true, type, createVectorWithSameElements(9, 1)};
         break;
         case BASIC:
             //Frame length should be overriden
-            return {"/Punch/", attackPropertiesLookup(BASIC).frameData.size(), false, type};
+            return {"/Punch/", false, type, attackPropertiesLookup(type).frameData};
         break;
         case KICK:
             //Frame length should be overriden
-            return {"/Kick/", attackPropertiesLookup(KICK).frameData.size(), false, type};
+            return {"/Kick/", false, type, attackPropertiesLookup(type).frameData};
         break;
         case CAST:
             //Frame length should be overriden
-            return {"/ProjectileCast/", attackPropertiesLookup(CAST).frameData.size(), false, type};
+            return {"/ProjectileCast/", false, type, attackPropertiesLookup(type).frameData};
         break;
         case PROJECTILE:
-            return {"/Projectile/", 1, true, type};
+            return {"/Projectile/", true, type};
         break;
 
 
         case DOUBLE_JUMP:
-            return {"/DoubleJump/doubleJumpFrame", 3, false, type};
+            return {"/DoubleJump/doubleJumpFrame", false, type, createVectorWithSameElements(4, 1)};
         break;
     }
  }
