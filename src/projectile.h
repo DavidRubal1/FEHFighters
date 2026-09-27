@@ -2,7 +2,7 @@ class projectile : public attack{
     public:
         projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color);
         void playProjectileAnimation(int color);
-        void moveProjectile(float velX);
+        void updateProjectilePosition(float velX);
         float getXVelocity();
     private:
         // projectile speed variables
@@ -22,20 +22,20 @@ projectile::projectile(action type, int hitHeight, int hitLength, int offsetX, i
 
 
 // plays the animation of the projectile given the player color
-// void projectile::playProjectileAnimation(int color){
-//     projectileAnimator.playAnimation(projectile, positionX, positionY, direction);
-// }
+void projectile::playProjectileAnimation(int color){
+    projectileAnimator.playAnimation(animationPropertiesLookup(PROJECTILE), positionX, positionY, getDirection());
+}
 
-// // gets the velocity of the attack (projecile only)
-// float projectile::getXVelocity(){
-//     return velocityX;
-// }
+// gets the velocity of the attack (projecile only)
+float projectile::getXVelocity(){
+    return velocityX;
+}
 
-// void projectile::moveProjectile(float velX){
-//     if(positionX > 0 && positionX < 320){
-//         positionX += velX * direction;
-//         updateAttackHitbox(true);
-//     }else{
-//         active = false;
-//     }
-// }
+void projectile::updateProjectilePosition(float velX){
+    if(positionX > 0 && positionX < 320){
+        positionX += velX * getDirection();
+        updateAttackHitbox();
+    }else{
+        // active = false;
+    }
+}

@@ -147,17 +147,6 @@ class player{
 
         bool AttackPressedLastFrame = false;  //track previous frame's button state
         
-        // Frame timing arrays for each attack (in number of frames)
-        // punch: frames 0-4 timing, etc.
-        // describes how long each frame of animation will last for
-        // Last frame in each are "lag frames"
-
-        
-        //Hitbox activation arrays for each attack (which frames deal damage)
-
-        //TODO: remove this when manage hitboxes gets redone
-        bool attackHitboxActive = false;  //is the current attack's hitbox active this frame
-
     
 };
 
@@ -300,9 +289,6 @@ timer player::getIntangibilityTimer(){
 void player::playAnimations(){
     // written by David rubal
 
-    //--------TODO: Rework this section with less nesting and only one call to the animator-------//
-    // Possibly tie this to the movement code as well...
-
     currentAnimationType = IDLE;
     
     // if not in hitstun
@@ -340,16 +326,14 @@ void player::playAnimations(){
         currentAnimationType = currentAttack->getAttackType();
         currentAnimationProperties = animationPropertiesLookup(currentAnimationType);
         
-
-        // Find frame timing
-        // We only have information about the previous frame of animation
         // If the attack was playing on the last frame
         if(playerAnimator.getLastFrameType() == currentAnimationType){
             // If the current frame is the last frame of animation, reset currentAttack
             int holdTime = playerAnimator.getHoldTime();
 
             // TODO: make this not a headache to look at
-            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1 && holdTime == currentAttack->getProperties().frameData[currentAnimationProperties.finalFrameNum - 1] - 1){
+            if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1 
+            && holdTime == currentAttack->getProperties().frameData[currentAnimationProperties.finalFrameNum - 1] - 1){
                     
                     currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
                     // END the attack 
@@ -363,6 +347,7 @@ void player::playAnimations(){
             }
         }
 
+        //TODO: also this
         if(currentAttack != nullptr) currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
 
         //TODO fix offset weirdness across the board
@@ -390,8 +375,6 @@ void player::playAnimations(){
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
     if(currentAttack != nullptr){
-
-        
         currentAttack->updateAttackPosition(positionX, positionY, direction);
         if(currentAttack->isActive()){
             checkAttackHits(otherPlayer, currentAttack);
@@ -430,12 +413,14 @@ void player::resetIfOffscreen(){
         velocityX = 0;
         velocityY = 0;
         damage = 0;
-        remainingLives--; // jump lag to prevent instant double jump after respawning
-        inJumpLag = true;
+        remainingLives--; 
+        inJumpLag = true; // jump lag to prevent instant double jump after respawning
 
         // checks for game over when a player has run out of lives
         if (remainingLives == 0)
         {
+
+            //TODO; make this a hoisted function that tells main to stop end the game
             gameOver = true;
         }
     }
@@ -479,8 +464,7 @@ action player::getCurrentAttack(){
         return IDLE;
     } else {
         return currentAttack->getAttackType();
-    }
-    
+    } 
 }
 
 // the player jumps upwards
@@ -488,7 +472,7 @@ action player::getCurrentAttack(){
 void player::jump(){
     // reset downwards force
     currentGravityForce = 0;
-    // decrease y-velocity (decrease means upwards motion)
+    // decrease y-velocity (upwards motion)
     velocityY -= jumpForce;
     inJumpLag = true;
 }
