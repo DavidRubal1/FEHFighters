@@ -4,8 +4,8 @@ class attack {
     public:
         attack(action type, int hitHeight, int hitLength, int offsetX, int offsetY);
         hitbox getHitbox();
-        void updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive);
-        void updateAttackHitbox(bool attackHitboxActive);
+        void updateAttackPosition(int posX, int posY, int dir);
+        void updateAttackHitbox();
         void consumeHitbox();
         // void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
@@ -99,7 +99,7 @@ void attack::consumeHitbox(){
 
 // Update the position of the attack
 /*coded by Charlie Limbert*/
-void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitboxActive){
+void attack::updateAttackPosition(int posX, int posY, int dir){
     // moves the attack's position to be an certain distance away from the player
     if(dir == 1){
         this->positionX = posX + playerHitboxLength - offX;
@@ -109,7 +109,7 @@ void attack::updateAttackPosition(int posX, int posY, int dir, bool attackHitbox
     // apply y-offset
     this->positionY = posY + offY;
     this->direction = dir;
-    updateAttackHitbox(attackHitboxActive);
+    updateAttackHitbox();
 }
 
 
@@ -126,7 +126,7 @@ bool attack::isActive(){
 
 // Update the hitbox based on attack type and direction
 /*coded by Charlie Limbert*/
-void attack::updateAttackHitbox(bool attackHitboxActive){
+void attack::updateAttackHitbox(){
 
 
     //TODO: Why is this like it is?
@@ -139,13 +139,13 @@ void attack::updateAttackHitbox(bool attackHitboxActive){
         }
         // debug code for viewing active attack hitboxes
         // intentionally left commented for future debugging
-        if(attackHitboxActive){
-            if(isActive()){
-                attackHitbox.debugDrawHitbox(RED);
-            }else{
-                attackHitbox.debugDrawHitbox(WHITE);
-            }
+  
+        if(isActive()){
+            attackHitbox.debugDrawHitbox(RED);
+        }else{
+            attackHitbox.debugDrawHitbox(WHITE);
         }
+        
 }
 
 // Check if this attack collides with another hitbox, used for testing player collison with attacks

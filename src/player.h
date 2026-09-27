@@ -347,9 +347,10 @@ void player::playAnimations(){
         if(playerAnimator.getLastFrameType() == currentAnimationType){
             // If the current frame is the last frame of animation, reset currentAttack
             int holdTime = playerAnimator.getHoldTime();
+
+            // TODO: make this not a headache to look at
             if(playerAnimator.getAnimationTime() == currentAnimationProperties.finalFrameNum - 1 && holdTime == currentAttack->getProperties().frameData[currentAnimationProperties.finalFrameNum - 1] - 1){
-                    // TODO: fix the way this is structured since it is a little akward.
-                    // TODO: fix this since it skips the last frame of animation
+                    
                     currentAnimationProperties.frameLength = currentAttack->getProperties().frameData[currentAttack->getCurrentFrame()];
                     // END the attack 
                     // Reset in case same animation is played again directly after this, and to reset for next time
@@ -389,12 +390,10 @@ void player::playAnimations(){
 /* written by David Rubal*/
 void player::manageHitboxes(player *otherPlayer){
     if(currentAttack != nullptr){
-        // gets the current attack to update position and check for overlap with other player
-        // attack* currentAttack = getCurrentAttack();
 
-        // TODO: this should be done by the attack itself?
-        currentAttack->updateAttackPosition(positionX, positionY, direction, attackHitboxActive);
-        if(attackHitboxActive){
+        
+        currentAttack->updateAttackPosition(positionX, positionY, direction);
+        if(currentAttack->isActive()){
             checkAttackHits(otherPlayer, currentAttack);
         }
     }
@@ -407,13 +406,13 @@ void player::manageHitboxes(player *otherPlayer){
 
 // check if the current attack overlaps with the other player and hit if true
 /* written by David Rubal*/
-void player::checkAttackHits(player *otherPlayer, attack *activeAttack){
+void player::checkAttackHits(player *otherPlayer, attack *atk){
     // if the other player is not intangible, the current attack is active, and the attack collides with the other player
-        if(!(*otherPlayer).getIntangibilityTimer().isActive() && (*activeAttack).isActive() && (*activeAttack).checkCollision((*otherPlayer).getHitbox())){
+        if(!otherPlayer->getIntangibilityTimer().isActive() && atk->checkCollision(otherPlayer->getHitbox())){
             // the other player takes the hit
-            (*otherPlayer).getHit(activeAttack);
+            otherPlayer->getHit(atk);
             // disable attack to prevent attack from hitting multiple times in the following active frames
-            (*activeAttack).consumeHitbox();
+            atk->consumeHitbox();
         }
 }
 
