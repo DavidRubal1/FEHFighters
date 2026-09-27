@@ -51,6 +51,7 @@ class player{
         // player distance at which the AI will start casting projectiles
         int projectileRange = 50;
 
+
         // player position coordinates
         int startingPosX, startingPosY;
         int positionX, positionY;
@@ -96,35 +97,27 @@ class player{
         // flag to keep track of whether the player has used double jump
         bool doubleJumpUsed = false;
 
-        // dash variables
-        bool inDashLag = false;
-        // keeps track of time spent in a dash
-        float dashLagTimerMax = 4;
-        //TODO: Change this to a timer item?
-        float dashLagTimer = 0;
-        
+        timer dashLag;
+        timer jumpLag; // flag to keep track of whether the player has just jumped, used to prevent double jump from being instantly used
+        timer hitstunTimer; // hitstun prevents the player from acting after getting hit
+        timer respawnIntangibleTimer; // makes the player invincible for a short period after dying
+         
         // animation player to draw the player's sprites for any given animation
         animator playerAnimator;
-
+        
+        action currentAnimationType;
 
         // separate animator and animation type for double jump to allow for another animation to play during double jump
         animator doubleJumpAnimator;
+
+
         // position of double jump
         int doubleJumpX, doubleJumpY;
 
-        //jump variables
+
         // change in y-velocity when jumping
         float jumpForce = 6;
-        // flag to keep track of whether the player has just jumped, used to prevent double jump from being instantly used
-        bool inJumpLag = false;
-        float jumpLagTimerMax = 3;
-        float jumpLagTimer = 0;
 
-        // gravity
-        // gravity during fast fall
-        float fastFallGravity = 0.20;
-        // flag to tell if the player is in "fast fall", which increases their gravity
-        bool inFastFall = false;
         // normal gravity
         float gravity = 0.24, tempGravity = 0.24;
         // downwards force applied each frame
@@ -132,18 +125,19 @@ class player{
         // terminal velocity
         float maxGravityForce = 1.5;
 
+        // gravity during fast fall
+        float fastFallGravity = 0.20;
+        // flag to tell if the player is in "fast fall", which increases their gravity
+        bool inFastFall = false;
+
+
         // controls
         //movement keys followed by attack keys
         Key left, right, up, down, basic, kick, projectile;
         // damage value of player, increased damage means increased knockback taken
-        float damage = 0;
-        // timers for hitstun and intangibility when respawning
-        // hitstun prevents the player from acting after getting hit
-        timer hitstunTimer;
-        // makes the player invincible for a short period after dying
-        timer respawnIntangibleTimer;
+        float damage = 0;   
         
-        action currentAnimationType;
+   
 
         bool AttackPressedLastFrame = false;  //track previous frame's button state
         
@@ -160,8 +154,8 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
         kickAttack(KICK, 10, 12, 3, 4), 
         projectileCast(CAST, 10, 5, 3, 6), 
         //projectileProjectile(PROJECTILE, 9, 8, -5, 8, 2.5),
-        playerAnimator(color), 
-        doubleJumpAnimator(color){
+        playerAnimator(color), doubleJumpAnimator(color),
+        dashLag(4), jumpLag(3), respawnIntangibleTimer(30){
     this->left = left;
     this->right = right;
     this->up = up;
@@ -244,36 +238,22 @@ void player::getHit(attack* activeAttack){
 /*written by Charlie Limbert and David Rubal*/
 void player::updateTimers(){
     // dash lag timer, keeps track of when the player started a dash
-    if(inDashLag){
-        dashLagTimer++;
-        if(dashLagTimer >= dashLagTimerMax){
-            inDashLag = false;
-            dashLagTimer = 0;
-            velocityXDecay = velocityXDecayTemp;
-        }
-    }
-    // jump lag timer, prevents double jump from instantly being used
-    if(inJumpLag){
-        jumpLagTimer++;
-        if(jumpLagTimer >= jumpLagTimerMax  && !Keyboard.isPressed(up)){
-            inJumpLag = false;
-            jumpLagTimer = 0;
-        }
+    if(dashLag.isActive() && !dashLag.incrementTimer()){
+        dashLag.resetTimer(false);
     }
 
+    // jump lag timer, prevents double jump from instantly being used
+    if(jumpLag.isActive() && !jumpLag.incrementTimer()  && !Keyboard.isPressed(up)){
+        jumpLag.resetTimer(false);
+    }
+    
     // hitstun timer, prevents the player from acting after being attacked
-    if(hitstunTimer.isActive()){
-        hitstunTimer.incrementTimer();
-        if(velocityY > 2.0){
-            hitstunTimer.setActiveState(false);
-        }else{
-            hitstunTimer.updateTimerState();
-        }
+    if(hitstunTimer.isActive() && !hitstunTimer.incrementTimer() && velocityY > 2.0){
+        hitstunTimer.resetTimer(false);
     }
     // respawn intangibility timer, provided invincibility after respawn
-    if(respawnIntangibleTimer.isActive()){
-        respawnIntangibleTimer.incrementTimer();
-        respawnIntangibleTimer.updateTimerState();
+    if(respawnIntangibleTimer.isActive() && !respawnIntangibleTimer.incrementTimer()){
+        respawnIntangibleTimer.resetTimer(false);
     }
 }
 
@@ -405,8 +385,6 @@ void player::resetIfOffscreen(){
     // if player position is off-screen
     if(positionX < 0 - hitboxLength || positionX > 319 || positionY > 239 || positionY < 0 - hitboxHeight){
         // give intangibility towards incoming attacks when respawned
-        respawnIntangibleTimer.resetTimer();
-        respawnIntangibleTimer.changeTimerMax(30);
         // resets position, velocity, and damage
         positionX = startingPosX;
         positionY = startingPosY -10; // player starts slightly above starting position
@@ -414,7 +392,7 @@ void player::resetIfOffscreen(){
         velocityY = 0;
         damage = 0;
         remainingLives--; 
-        inJumpLag = true; // jump lag to prevent instant double jump after respawning
+        jumpLag.setActiveState(true); // jump lag to prevent instant double jump after respawning
 
         // checks for game over when a player has run out of lives
         if (remainingLives == 0)
@@ -431,7 +409,7 @@ void player::resetIfOffscreen(){
 void player::dash(int direction){
     // increase x-velocity
     velocityX = direction * runSpeedMax * 0.9;
-    inDashLag = true;
+    dashLag.setActiveState(true);
     // decrease velocity decay for sliding
     velocityXDecay = velocityXDecayDash;
 }
@@ -474,7 +452,7 @@ void player::jump(){
     currentGravityForce = 0;
     // decrease y-velocity (upwards motion)
     velocityY -= jumpForce;
-    inJumpLag = true;
+    jumpLag.setActiveState(true);
 }
 
 // general input handler for player movement
@@ -492,7 +470,7 @@ void player::generalPlayerMovementControl(){
             if(!Keyboard.isPressed(down) && !Keyboard.isPressed({left, right})
                 || (AIVerticalDirection == -1 || AIVerticalDirection == 1)){
                 // if not right after a dash
-                if(!inDashLag){
+                if(!dashLag.isActive()){
                     // move left
                     if(Keyboard.isPressed(left) || AIHorizontalDirection == 0){
                         direction = -1;
@@ -540,7 +518,7 @@ void player::generalPlayerMovementControl(){
             }
         }
         // fast fall when down is pressed
-        if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !inJumpLag){
+        if((Keyboard.isPressed(down) || AIVerticalDirection == 0) && !jumpLag.isActive()){
             // increase gravity for fast fall
             gravity = fastFallGravity;
             inFastFall = true;
@@ -548,7 +526,7 @@ void player::generalPlayerMovementControl(){
         // if not in lag or in an attack
         if(currentAttack == nullptr){
             // use double jump when jumping in air
-            if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !inJumpLag){
+            if((Keyboard.isPressed(up) || AIVerticalDirection == 1) && !doubleJumpUsed && !jumpLag.isActive()){
                 inFastFall = false;
                 //increase gravity
                 gravity = tempGravity;
@@ -667,7 +645,7 @@ void player::enactPlayerMovement(){
 /* written by David Rubal */
 void player::determineAIDecisions(player *humanPlayer){
     // stores both x and y coordinates of the human player in a vector
-    std::vector<int> p1Position = (*humanPlayer).getXYPosition();
+    std::vector<int> p1Position = humanPlayer->getXYPosition();
     // resets each decision each frame, -1 means no action
     AIHorizontalDirection = -1;
     AIVerticalDirection = -1;
@@ -680,8 +658,6 @@ void player::determineAIDecisions(player *humanPlayer){
     // determine the distance from the AI's current position with the player's current position
     int distanceToPlayerX = positionX - playerX;
     int distanceToPlayerY = positionY - playerY;
-    // update the reaction timer
-    AIReactionTimer.updateTimerState();
     // once every 12 frames, set the targeted position to the player's position
     if(AIReactionTimer.getCurrentTime() == 0){
         targetX = playerX;
@@ -727,14 +703,14 @@ void player::determineAIDecisions(player *humanPlayer){
     // otherwise, if the player is below the AI, crouch/fastfall to meet them
     if(positionY < targetY - safeRangeY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 0;
-    }else if(!inJumpLag && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
+    }else if(!jumpLag.isActive() && positionY - safeRangeY > targetY && (positionX > targetX - safeRangeX || positionX < targetX + safeRangeX)){
         AIVerticalDirection = 1;
     }
     // if the AI is within range of the player, attack
     if(abs(distanceToPlayerX) < safeRangeX ){
         // perform a punch or a kick (less likely) if the player has less than 50 damage
         // if they have more than 50 damage, kick only
-        if((*humanPlayer).getDamage() < 50 && randomness < 25){
+        if(humanPlayer->getDamage() < 50 && randomness < 25){
             AIAttack = 0; //punch
         }else{
             AIAttack = 1; // kick

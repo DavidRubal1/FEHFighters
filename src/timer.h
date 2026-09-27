@@ -2,13 +2,13 @@
 class timer{
     public:
         timer();
+        timer(int max);
         void setActiveState(bool state);
-        void incrementTimer();
-        void updateTimerState();
+        bool incrementTimer();
         int getCurrentTime();
         bool isActive();
         void changeTimerMax(int max);
-        void resetTimer();
+        void resetTimer(bool active = true);
     private:
         int max;
         int current = 0;
@@ -19,23 +19,18 @@ class timer{
 timer::timer(){
 }
 
+timer::timer(int max){
+    this->max = max;
+}
+
 // sets the timer state to the boolean parameter
 void timer::setActiveState(bool state){
     active = state;
 }
 
 // increments the timer time by one
-void timer::incrementTimer(){
-    current++;
-}
-
-// changes the timer's state based on whether the current time exceed the max
-void timer::updateTimerState(){
-    if(current > max){
-        active = false;
-    }else{
-        active = true;
-    }
+bool timer::incrementTimer(){
+    return active = ++current <= max;
 }
 
 // returns the timer's current time
@@ -54,7 +49,7 @@ void timer::changeTimerMax(int max){
 }
 
 // resets the current time to 0 and reactivates the timer
-void timer::resetTimer(){
+void timer::resetTimer(bool active = true){
     current = 0;
-    active = true;
+    this->active = active;
 }

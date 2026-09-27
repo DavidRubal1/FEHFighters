@@ -22,7 +22,7 @@ class animator{
 
 // Constructor, sets the color of the object to be animated
 animator::animator(int color)
-: animationTimer(), holdTimer(){
+: animationTimer(64), holdTimer(64){
     this->color = color;
 }
 
@@ -64,8 +64,6 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
         holdTimer.resetTimer();
         type = properties.type;
     }
-    // update whether the time is active or not (has reached max val or not)
-    animationTimer.updateTimerState();
     // reset the timer if it is looping and has become inactive
     if(properties.looping && !animationTimer.isActive()){
         animationTimer.resetTimer();
@@ -120,7 +118,6 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
         holdTimer.resetTimer();
         type = properties.type;
     }
-    animationTimer.updateTimerState();
     if(properties.looping && !animationTimer.isActive()){
         if(!animationTimer.isActive()){
             animationTimer.resetTimer();
