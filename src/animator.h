@@ -13,7 +13,7 @@ class animator{
         void resetTimers();
     private:
         int type = -1;
-        int color;
+        int color, direction = -2;
         animationProperties currentAnimation;
         char baseFilePath[64] = "./graphics/Animations";
         timer animationTimer;
@@ -63,12 +63,13 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
 
     // if the animation ID has changed, the reset the animation Timer
     //TODO: I could probably replace this with a state of one or both timers instead of comparing type
-    if(type != properties.type){
+    if(type != properties.type || this->direction != direction){
         currentAnimation = properties;
         animationTimer.setMax(properties.frameLengths.size());
         holdTimer.setMax(properties.frameLengths.at(0));
         resetTimers();
         type = properties.type;
+        this->direction = direction;
     }
 
     // reset the timer if it is looping and has become inactive
@@ -110,8 +111,6 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
             }
         }
     }
-
-
     return animationTimer.getCurrentTime();
 
 }
@@ -152,6 +151,3 @@ int animator::playAnimation(animationProperties properties, int posX, int posY){
     }
      return animationTimer.getCurrentTime();
 }
-
-
-

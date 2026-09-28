@@ -78,7 +78,7 @@ int attack::getCurrentFrame(){
 }
 
 void attack::setCurrentFrame(int i){
-    hitboxConsumed = currentAnimationFrame != 1;
+    hitboxConsumed = false;
     currentAnimationFrame = i;
 }
 

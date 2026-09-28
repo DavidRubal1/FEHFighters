@@ -86,7 +86,7 @@ class player{
         // velocity decay when not holding a movement key
         float velocityXDecay = 0.92, velocityXDecayTemp = 0.92;
         // velocity decay when in dash
-        float velocityXDecayDash = 0.95;
+        float velocityXDecayDash = 0.92;
 
         // grounded state, is true when the player is standing on the ground or the platform
         bool grounded = true;
@@ -208,7 +208,7 @@ void player::getHit(attack* activeAttack){
     // scale force based on current damage and given knockback
     float force = (((0.1 * (damage / 100)))* 50 * properties.KBscaling) + properties.knockback;
     // reset timing varibles before entering hitstun, or move those timers into a separate function
-    hitstunTimer.reset();
+    hitstunTimer.activate();
     // set hitstun time based on scaling
     hitstunTimer.setMax(properties.hitstunFramesBase  + properties.hitstunScaling  * damage);
     // calculate the direction of knockback into x and y components
@@ -239,12 +239,13 @@ void player::getHit(attack* activeAttack){
 void player::updateTimers(){
     // dash lag timer, keeps track of when the player is in a dash
     if(dashLag.isActive()){
-        if(basic == KEY_X) std::cout << "DASH LAG ACTIVE\n" << dashLag.getCurrentTime() << std::endl;
         dashLag.increment();
-    } else{
-        dashLag.reset();
-        dashLag.stop();
-    }
+        if(!dashLag.isActive()){
+            dashLag.reset();
+            dashLag.stop();
+            velocityXDecay = velocityXDecayTemp;
+        }
+    } 
 
     //TODO: move this out of timers into another method
     // jump lag timer, prevents double jumping with same input as jump
@@ -253,22 +254,21 @@ void player::updateTimers(){
     // hitstun timer, prevents the player from acting after being attacked
     if(hitstunTimer.isActive()){
         hitstunTimer.increment();
-        if(velocityY > 2.0) {
+        if( velocityY > 2.75 || !hitstunTimer.isActive()) {
             hitstunTimer.reset();
             hitstunTimer.stop();
         }
-    } else{
-        hitstunTimer.reset();
-        hitstunTimer.stop();
     }
 
     // respawn intangibility timer, provided invincibility after respawn
     if(respawnIntangibleTimer.isActive()){
         respawnIntangibleTimer.increment();
-    } else{
-        respawnIntangibleTimer.reset();
-        respawnIntangibleTimer.stop();
+        if(!respawnIntangibleTimer.isActive()){
+            respawnIntangibleTimer.reset();
+            respawnIntangibleTimer.stop();
+        }
     }
+    
 }
 
 // returns a copy of the intangibility timer
@@ -282,9 +282,8 @@ timer player::getIntangibilityTimer(){
 /*coded by Charlie Limbert and David Rubal*/
 void player::playAnimations(){
     // written by David rubal
-
+    //Default animation
     currentAnimationType = IDLE;
-    
     // if not in hitstun
     if(!hitstunTimer.isActive() && currentAttack == nullptr && grounded){
         // if not attacking
@@ -319,8 +318,14 @@ void player::playAnimations(){
 
         if(!playerAnimator.isAnimationOver() || currentAttack->getAttackType() != playerAnimator.getAnimationType()){
             currentAnimationType = currentAttack->getAttackType();
-            currentAnimationProperties = animationPropertiesLookup(currentAnimationType);   
-            currentAttack->setCurrentFrame(playerAnimator.getAnimationTime());
+            currentAnimationProperties = animationPropertiesLookup(currentAnimationType);  
+            if(currentAttack->getCurrentFrame() != playerAnimator.getAnimationTime()){
+                
+                currentAttack->setCurrentFrame(playerAnimator.getAnimationTime());
+                std::cout << "new frame: " << currentAttack->getCurrentFrame()<< std::endl;
+            }
+            
+
             //TODO fix offset weirdness across the board
             // offsets the attack by a certain amount to align the animation with the player's hitbox
             if(direction == -1){
@@ -342,10 +347,6 @@ void player::playAnimations(){
         //     }
         // }
     }
-    // if(basic == KEY_X){
-    //     std::cout << "\nTYPE: \n" << currentAnimationProperties.fileName << "ANIMATION \n" << playerAnimator.getAnimationTime() << "\nHOLD \n" << playerAnimator.getHoldTime() << std::endl;
-    // }
-
     playerAnimator.playAnimation(currentAnimationProperties, offsetX, positionY, direction);
 }
 
@@ -392,6 +393,7 @@ void player::resetIfOffscreen(){
         damage = 0;
         remainingLives--; 
         jumpLag = true; // jump lag to prevent instant double jump after respawning
+        respawnIntangibleTimer.activate();
 
         // checks for game over when a player has run out of lives
         if (remainingLives == 0)
@@ -407,7 +409,7 @@ void player::resetIfOffscreen(){
 /* written by David Rubal*/
 void player::dash(int direction){
     // increase x-velocity
-    velocityX = direction * runSpeedMax * 0.9;
+    velocityX = direction * runSpeedMax * 1.25;
     dashLag.activate();
     // decrease velocity decay for sliding
     velocityXDecay = velocityXDecayDash;

@@ -38,7 +38,7 @@ attackProperties attackPropertiesLookup(action type){
             2.5,
             5,
             0.2,
-            {2, 3, 2, 3, 7},
+            {2, 3, 1, 3, 7},
             {false, false, false, true, false}
         };
         break; // projectile cast

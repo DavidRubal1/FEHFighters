@@ -10,6 +10,7 @@ class timer{
         int getCurrentTime();
         bool isActive();
         void setMax(int max);
+        int getMax();
         void reset();
     private:
         int max;
@@ -51,6 +52,10 @@ bool timer::isActive(){
 // updates the timer's maximum time
 void timer::setMax(int max){
     this->max = max;
+}
+
+int timer::getMax(){
+    return max;
 }
 
 // resets the current time to 0
