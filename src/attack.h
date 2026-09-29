@@ -13,6 +13,7 @@ class attack {
 
         action getAttackType();
         int getDirection();
+        std::vector<int>* getPosition();
    
         bool isActive();
         attackProperties getProperties();
@@ -23,8 +24,7 @@ class attack {
         // attack properties
         action type; 
         int direction;   // -1 = left, 1 = right
-        int positionX;
-        int positionY;
+        std::vector<int> position = {0, 0};
         int offX, offY; // given offsets for attack positions
         // TODO: integrate this into the posx and posy sent initially?
         int playerHitboxLength = 14; // used to offset attack position
@@ -73,6 +73,10 @@ attackProperties attack::getProperties(){
     return properties;
 }
 
+std::vector<int>* attack::getPosition(){
+    return &position;
+}
+
 int attack::getCurrentFrame(){
     return currentAnimationFrame;
 }
@@ -98,12 +102,12 @@ void attack::consumeHitbox(){
 void attack::updateAttackPosition(int posX, int posY, int dir){
     // moves the attack's position to be an certain distance away from the player
     if(dir == 1){
-        this->positionX = posX + playerHitboxLength - offX;
+        position[0] = posX + playerHitboxLength - offX;
     }else{
-        this->positionX = posX - hitboxLength + offX;
+        position[0] = posX - hitboxLength + offX;
     }
     // apply y-offset
-    this->positionY = posY + offY;
+    position[1] = posY + offY;
     this->direction = dir;
     updateAttackHitbox();
 }
@@ -117,6 +121,7 @@ void attack::updateAttackPosition(int posX, int posY, int dir){
 
 // returns whether this attack is active
 bool attack::isActive(){
+    // TODO:  This causes attacks that are active on frame 0 to always be active since currentAnimationFrame is 0 be default
     return !hitboxConsumed && properties.activeFrames[currentAnimationFrame];
 }
 
@@ -124,15 +129,8 @@ bool attack::isActive(){
 /*coded by Charlie Limbert*/
 void attack::updateAttackHitbox(){
 
-
-    //TODO: Why is this like it is?
-        if(direction == -1){
-            // attack extends to the left
-            attackHitbox.updateHitbox(positionX, positionY);
-        } else {
-            // attack extends to the right
-            attackHitbox.updateHitbox(positionX, positionY);
-        }
+        attackHitbox.updateHitbox(position[0], position[1]);
+       
         // debug code for viewing active attack hitboxes
         // intentionally left commented for future debugging
   

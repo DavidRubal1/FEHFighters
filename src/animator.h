@@ -80,17 +80,11 @@ int animator::playAnimation(animationProperties properties, int posX, int posY, 
 
     if(animationTimer.isActive()){
         // add the player directory to the file path
-        if(color == RED){
-            strcat(filePath, "/PlayerRed");
-        }else{
-            strcat(filePath, "/PlayerBlue");
-        }
+        color == RED ? strcat(filePath, "/PlayerRed"): strcat(filePath, "/PlayerBlue");
+
         // add the direction directory to the file path
-        if(direction == -1){
-            strcat(filePath, "/Left");
-        }else{
-            strcat(filePath, "/Right");
-        }
+        direction == -1 ? strcat(filePath, "/Left"): strcat(filePath, "/Right");
+
         // add the given file name to the file path
         strcat(filePath, properties.fileName);
         // add the number indicator given for the frame of animation 

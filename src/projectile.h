@@ -1,14 +1,13 @@
 class projectile : public attack{
     public:
         projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color);
-        void playProjectileAnimation(int color);
-        void updateProjectilePosition(float velX);
+        void playProjectileAnimation();
+        void updateProjectilePosition();
         float getXVelocity();
     private:
         // projectile speed variables
         float velocityX;
         float velocityY;
-        int positionX, positionY;
         animator projectileAnimator;
 
 };
@@ -17,13 +16,15 @@ class projectile : public attack{
 projectile::projectile(action type, int hitHeight, int hitLength, int offsetX, int offsetY, float velX, int color)
     : attack(type, hitHeight, hitLength, offsetX, offsetY),
         projectileAnimator(color){
-    this->velocityX = velX;        
+    this->velocityX = velX;     
+    //start inactive
+    consumeHitbox();   
 }
 
 
 // plays the animation of the projectile given the player color
-void projectile::playProjectileAnimation(int color){
-    projectileAnimator.playAnimation(animationPropertiesLookup(PROJECTILE), positionX, positionY, getDirection());
+void projectile::playProjectileAnimation(){
+    projectileAnimator.playAnimation(animationPropertiesLookup(PROJECTILE), getPosition()->at(0), getPosition()->at(1), getDirection());
 }
 
 // gets the velocity of the attack (projecile only)
@@ -31,11 +32,12 @@ float projectile::getXVelocity(){
     return velocityX;
 }
 
-void projectile::updateProjectilePosition(float velX){
-    if(positionX > 0 && positionX < 320){
-        positionX += velX * getDirection();
+void projectile::updateProjectilePosition(){
+    if(getPosition()->at(0) > 0 && getPosition()->at(0) < 320){
+        getPosition()->at(0) += velocityX * getDirection();
+        std::cout << "POS: " << getPosition()->at(0) << std::endl; 
         updateAttackHitbox();
     }else{
-        // active = false;
+        consumeHitbox();
     }
 }

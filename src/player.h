@@ -8,7 +8,6 @@ class player{
         void manageHitboxes(player *otherPlayer);
         void getHit(attack* activeAttack);
         void groundPlayer(int groundYLevel);
-        void updateProjectile();
         void updateTimers();
         timer getIntangibilityTimer();
         void playAnimations();
@@ -69,6 +68,7 @@ class player{
         attack kickAttack;
         attack projectileCast;
         attack *currentAttack = nullptr;
+        projectile proj;
         // TODO: move these attacks to Moveset class, throw projectile spawner in there as well 
         // What do I do with you...
         //attack projectileProjectile;
@@ -135,12 +135,7 @@ class player{
         //movement keys followed by attack keys
         Key left, right, up, down, basic, kick, projectile;
         // damage value of player, increased damage means increased knockback taken
-        float damage = 0;   
-        
-   
-
-        bool AttackPressedLastFrame = false;  //track previous frame's button state
-        
+        float damage = 0;         
     
 };
 
@@ -153,6 +148,7 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
         punch(BASIC, 15, 10, 5, 4), 
         kickAttack(KICK, 10, 12, 3, 4), 
         projectileCast(CAST, 10, 5, 3, 6), 
+        proj(PROJECTILE, 9, 8, -5, 8, 3, color),
         //projectileProjectile(PROJECTILE, 9, 8, -5, 8, 2.5),
         playerAnimator(color), doubleJumpAnimator(color),
         dashLag(3), respawnIntangibleTimer(30){
@@ -172,11 +168,7 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
     if(AI){
         AIReactionTimer.setMax(11);
     }
-    if(color == BLUE){
-        direction = -1; // Blue starts facing left
-    }else{
-        direction = 1;  // Red starts facing right
-    }
+    color == BLUE ? direction = -1: direction = 1;
 
 
 }
@@ -226,13 +218,6 @@ void player::getHit(attack* activeAttack){
 // move and draw projectile
 // ******** MOVE OUT OF PLAYER **********
 /* written by David Rubal*/
-
-// void player::updateProjectile(){
-//     // change projectile position by the projectile's velocity
-//     projectileProjectile.moveProjectile(projectileProjectile.getXVelocity());
-//     // draw projectile
-//     projectileProjectile.playProjectileAnimation(playerColor);
-// }
 
 // increments timers and updates the player state accordingly
 /*written by Charlie Limbert and David Rubal*/
@@ -322,10 +307,8 @@ void player::playAnimations(){
             if(currentAttack->getCurrentFrame() != playerAnimator.getAnimationTime()){
                 
                 currentAttack->setCurrentFrame(playerAnimator.getAnimationTime());
-                std::cout << "new frame: " << currentAttack->getCurrentFrame()<< std::endl;
             }
             
-
             //TODO fix offset weirdness across the board
             // offsets the attack by a certain amount to align the animation with the player's hitbox
             if(direction == -1){
@@ -339,13 +322,18 @@ void player::playAnimations(){
             currentAttack = nullptr;
         }
 
-        // Cast projectile -> TODO: come back to this once attacks moved to Moveset Class
-        //     // create separate projectile after casting, only allow one
-        //     if(currentAttackType == 2 && attackAnimationTimer == 19){
-        //         projectileProjectile.updateAttackPosition(positionX, positionY, direction, true);
-        //         projectileProjectile.updateActiveState(true);
-        //     }
-        // }
+        //TOOD: move this out of the animation function
+        // spawn projectile at player at the last frame of cast animation
+        if(currentAttack != nullptr){
+            if(currentAttack->getAttackType() == CAST 
+            && playerAnimator.getAnimationTime() ==  currentAttack->getProperties().frameData.size() - 1 
+            && playerAnimator.getHoldTime() == currentAttack->getProperties().frameData[currentAttack->getProperties().frameData.size() - 1] - 1){
+                proj.setCurrentFrame(0);
+                proj.updateAttackPosition(positionX, positionY, direction);
+            }
+        
+        }
+        
     }
     playerAnimator.playAnimation(currentAnimationProperties, offsetX, positionY, direction);
 }
@@ -361,10 +349,14 @@ void player::manageHitboxes(player *otherPlayer){
         }
     }
     // checks for projectile overlap with other player, separate because projectiles have separate movement
-    // if(projectileProjectile.isActive()){
-    //     checkAttackHits(otherPlayer, &projectileProjectile);
-    //     updateProjectile();
-    // }
+    if(proj.isActive()){
+        // change projectile position by the projectile's velocity
+        proj.updateProjectilePosition();
+        // draw projectile
+        proj.playProjectileAnimation();
+        checkAttackHits(otherPlayer, &proj);
+        
+    }
 }
 
 // check if the current attack overlaps with the other player and hit if true
@@ -433,7 +425,9 @@ void player::determineAction(){
         else if (Keyboard.isPressed(projectile) || AIAttack == 2) {
             currentAttack = &projectileCast;
         }
+        
     }
+   
     
 }
 
