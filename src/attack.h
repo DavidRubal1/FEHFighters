@@ -10,7 +10,6 @@ class attack {
         // void updateActiveState(bool state);
         bool checkCollision(hitbox otherHitbox);
 
-
         action getAttackType();
         int getDirection();
         std::vector<int>* getPosition();
@@ -32,10 +31,6 @@ class attack {
         // hitbox dimensions
         int hitboxHeight;
         int hitboxLength;
-        
-        // whether attack is being used or not
-        // Attack should know its current frame being played 
-        // bool active = false;
 
         attackProperties properties;
 
@@ -113,12 +108,6 @@ void attack::updateAttackPosition(int posX, int posY, int dir){
 }
 
 
-
-// // changes the active state of the attack to the parameter's state
-// void attack::updateActiveState(bool state){
-//     active = state;
-// }
-
 // returns whether this attack is active
 bool attack::isActive(){
     // TODO:  This causes attacks that are active on frame 0 to always be active since currentAnimationFrame is 0 be default
@@ -131,14 +120,12 @@ void attack::updateAttackHitbox(){
 
         attackHitbox.updateHitbox(position[0], position[1]);
        
-        // debug code for viewing active attack hitboxes
-        // intentionally left commented for future debugging
-  
-        if(isActive()){
-            attackHitbox.debugDrawHitbox(RED);
-        }else{
-            attackHitbox.debugDrawHitbox(WHITE);
-        }
+        // debug hitbox display 
+        // if(isActive()){
+        //     attackHitbox.debugDrawHitbox(RED);
+        // }else{
+        //     attackHitbox.debugDrawHitbox(WHITE);
+        // }
         
 }
 

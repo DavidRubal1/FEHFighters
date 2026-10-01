@@ -50,7 +50,6 @@ class player{
         // player distance at which the AI will start casting projectiles
         int projectileRange = 50;
 
-
         // player position coordinates
         int startingPosX, startingPosY;
         int positionX, positionY;
@@ -169,8 +168,6 @@ player::player(bool AI, Key left, Key right, Key up, Key down, Key basicAttack, 
         AIReactionTimer.setMax(11);
     }
     color == BLUE ? direction = -1: direction = 1;
-
-
 }
 
 
@@ -195,6 +192,8 @@ float player::getDamage(){
 // enact knockback and hitstun on player when hit, and increase damage counter
 /* written by David Rubal*/
 void player::getHit(attack* activeAttack){
+    // Cancel the current attack if attacking
+    currentAttack = nullptr;
     float forceX, forceY;
     attackProperties properties = activeAttack->getProperties();
     // scale force based on current damage and given knockback
@@ -326,8 +325,8 @@ void player::playAnimations(){
         // spawn projectile at player at the last frame of cast animation
         if(currentAttack != nullptr){
             if(currentAttack->getAttackType() == CAST 
-            && playerAnimator.getAnimationTime() ==  currentAttack->getProperties().frameData.size() - 1 
-            && playerAnimator.getHoldTime() == currentAttack->getProperties().frameData[currentAttack->getProperties().frameData.size() - 1] - 1){
+            && playerAnimator.getAnimationTime() ==  currentAttack->getProperties().frameData.size() - 2 
+            && playerAnimator.getHoldTime() == currentAttack->getProperties().frameData[currentAttack->getProperties().frameData.size() - 2] - 1){
                 proj.setCurrentFrame(0);
                 proj.updateAttackPosition(positionX, positionY, direction);
             }

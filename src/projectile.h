@@ -35,7 +35,6 @@ float projectile::getXVelocity(){
 void projectile::updateProjectilePosition(){
     if(getPosition()->at(0) > 0 && getPosition()->at(0) < 320){
         getPosition()->at(0) += velocityX * getDirection();
-        std::cout << "POS: " << getPosition()->at(0) << std::endl; 
         updateAttackHitbox();
     }else{
         consumeHitbox();

@@ -56,13 +56,12 @@ void animator::resetTimers(){
 // animation path must follow ./graphics/Animations/Player(Color)/(Direction)/
 // returns current animation frame
 int animator::playAnimation(animationProperties properties, int posX, int posY, int direction){
-    
-
+    // Construct file path of frame
     char filePath[64];
     strcpy(filePath, baseFilePath);
 
     // if the animation ID has changed, the reset the animation Timer
-    //TODO: I could probably replace this with a state of one or both timers instead of comparing type
+    //TODO: probably replace this with a state of one or both timers instead of comparing type
     if(type != properties.type || this->direction != direction){
         currentAnimation = properties;
         animationTimer.setMax(properties.frameLengths.size());

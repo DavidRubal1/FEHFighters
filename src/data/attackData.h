@@ -15,7 +15,6 @@ struct attackProperties{
     std::vector<bool> activeFrames;
 };
 
-
 attackProperties attackPropertiesLookup(action type){
     switch(type){
         case BASIC: // punch
@@ -53,7 +52,7 @@ attackProperties attackPropertiesLookup(action type){
             {4, 6, 3, 3, 6},
             {false, false, false, true, false}
         };
-        break;
+        break; // Projectile object
         case PROJECTILE:
             return{
                 6.5,
@@ -68,7 +67,3 @@ attackProperties attackPropertiesLookup(action type){
         break;
     }
 }
-
-// int* getHitboxDim(action type){
-
-// }
